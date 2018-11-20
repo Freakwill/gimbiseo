@@ -8,7 +8,7 @@ from owlready2 import *
 import english
 
 
-PATH = pathlib.Path("database")
+PATH = pathlib.Path("kb")
 onto_path.append(PATH)
 gimbiseo = get_ontology("http://test.org/gimbiseo.owl")
 
