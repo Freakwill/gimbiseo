@@ -62,9 +62,15 @@ class StatementAction(SentenceAction):
 
     def exec(self, memory):
         if self.relation == 'is a':
-            memory.update({self.subject: memory[self.object](self.subject)})
+            if self.subject in memory:
+                memory[self.subject].is_instance_of.append(memory[self.object])
+            else:
+                memory.update({self.subject: memory[self.object](self.subject)})
         elif self.relation == 'sort':
-            memory.update({self.subject: types.new_class(self.subject, (self.object,))})
+            if self.subject in memory:
+                memory[self.subject].is_a.append(memory[self.object])
+            else:
+                memory.update({self.subject: types.new_class(self.subject, (self.object,))})
         else:
             memory.update({self.relation: types.new_class(self.relation, (type(memory[self.subject]) >> type(memory[self.object]),))})
             getattr(memory[self.subject], self.relation).extend([memory[self.object]])
