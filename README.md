@@ -22,5 +22,9 @@ I am thinking...
 -- Who dose Alice love?
 I am thinking...
 -- Bob
--- 
+-- love is a sort of SymmetricProperty.
+-- I get.
+-- Who dose Bob love?
+-- Alice.
+--
 ```
