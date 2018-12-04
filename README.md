@@ -1,9 +1,12 @@
 # gimbiseo
+🤖Man-machine conversation system base on owlready2 
+
 基于 owlready2 的问答系统。灵感来自韩剧《金秘书你为何这样》
 
 
 # 用法
-运行owlgimbiseo.py
+just run owlgimbiseo.py
+运行 owlgimbiseo.py
 
 # 示例
 ```
