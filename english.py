@@ -70,7 +70,7 @@ class StatementAction(SentenceAction):
             if self.subject in memory:
                 memory[self.subject].is_a.append(memory[self.object])
             else:
-                memory.update({self.subject: types.new_class(self.subject, (self.object,))})
+                memory.update({self.subject: types.new_class(self.subject, (memory[self.object],))})
         else:
             memory.update({self.relation: types.new_class(self.relation, (type(memory[self.subject]) >> type(memory[self.object]),))})
             getattr(memory[self.subject], self.relation).extend([memory[self.object]])

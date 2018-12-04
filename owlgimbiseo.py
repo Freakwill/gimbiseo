@@ -59,4 +59,6 @@ with gimbiseo:
             except Exception:
                 ask(q, memory)
 
+# gimbiseo.save()
+
 
