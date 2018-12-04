@@ -28,3 +28,19 @@ I am thinking...
 -- Alice.
 --
 ```
+
+```
+-- lily is a Thing.
+-- I get.
+-- Flower is a sort of Thing.
+-- I get.
+-- lily is a Flower.
+-- I get.
+-- Person is a sort of Thing.
+-- I get.
+-- lily is a Person.
+-- I get.
+-- Is lily a Person?
+I am thinking...
+-- Yes
+```
