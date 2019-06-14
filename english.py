@@ -15,12 +15,14 @@ import pyparsing as pp
 import pyparsing_ext as ppx
 
 
+_dict = {'symmetric':'SymmetricProperty', 'thing':'Thing'}
+
 class SentenceAction(ppx.BaseAction):
     def __init__(self, instring='', loc=0, tokens=[]):
         super(SentenceAction, self).__init__(instring, loc, tokens)
         self.relation = tokens.relation
-        self.object = tokens.object
-        self.subject = tokens.subject
+        self.object = _dict.get(tokens.object, tokens.object)
+        self.subject = _dict.get(tokens.subject, tokens.subject)
 
 class GeneralQuestionAction(SentenceAction):
 
@@ -32,8 +34,10 @@ class GeneralQuestionAction(SentenceAction):
 
     def exec(self, memory):
         if self.has('relation') and self.relation:
+            # o in s.R.indirect()
             return memory[self.object] in getattr(memory[self.subject], self.relation).indirect()
         else:
+            # s is an instance of o
             return isinstance(memory[self.subject], memory[self.object])
 
 class SpecialQuestionAction(SentenceAction):
@@ -43,9 +47,11 @@ class SpecialQuestionAction(SentenceAction):
 
     def exec(self, memory):
         if self.object in {'Who', 'What'}:
+            # {a.name | a in s.R.indirect()}
             return ', '.join(a.name for a in getattr(memory[self.subject], self.relation).indirect())
         elif self.subject in {'Who', 'What'}:
-            return ','.join(getattr(getattr(memory[self.subject], self.relation), 'inverse').indirect())
+            # {a.name | a in s.R.inverse.indirect()}
+            return ','.join(a.name for a in getattr(getattr(memory[self.subject], self.relation), 'inverse').indirect())
 
         
 class StatementAction(SentenceAction):
@@ -62,18 +68,28 @@ class StatementAction(SentenceAction):
 
     def exec(self, memory):
         if self.relation == 'is a':
+            # s is an instance of o
             if self.subject in memory:
                 memory[self.subject].is_instance_of.append(memory[self.object])
             else:
+                # create s as an instance of o
                 memory.update({self.subject: memory[self.object](self.subject)})
-        elif self.relation == 'sort':
+        elif self.relation in {'sort', 'kind'}:
+            # s is a sort/kind of o
             if self.subject in memory:
                 memory[self.subject].is_a.append(memory[self.object])
             else:
+                # create s as a subclass of o
                 memory.update({self.subject: types.new_class(self.subject, (memory[self.object],))})
         else:
+            # create R as a relation between s and o
             memory.update({self.relation: types.new_class(self.relation, (type(memory[self.subject]) >> type(memory[self.object]),))})
             getattr(memory[self.subject], self.relation).extend([memory[self.object]])
+
+    def to_gq(self):
+        gq = GeneralQuestion()
+        for p in ('relation', 'subject', 'object'):
+            setattr(gq, p, getattr(self, p))
 
 
 Noun = pp.Word(pp.alphanums)
@@ -95,7 +111,6 @@ Statement.addParseAction(StatementAction)
 Sentence = Question | Statement
 
 
-def english2logic(s):
+def toLogic(s):
     return Sentence.parseString(s)[0]
-
 
