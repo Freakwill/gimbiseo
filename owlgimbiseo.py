@@ -42,7 +42,6 @@ memory = ChineseMemory()
 def main(memory):
     with gimbiseo:
         while True:
-            # sh.say(q)
             try:
                 q = input('-- ')
                 if q.startswith('%'):
@@ -59,8 +58,17 @@ def main(memory):
                     a = q(memory)
                     if a:
                         print_say(memory.get)
+                        for h in memory._history:
+                            try:
+                                a = h(memory)
+                                if a:
+                                    memory._history.remove(h)
+                            except:
+                                pass
+                except NameError as e:
+                    print_say(e)
+                    memory.record(q)
                 except Exception as e:
-                    print(e)
                     print_say(memory.excuse)
             elif isinstance(q, GeneralQuestionAction):
                 try:
@@ -78,12 +86,10 @@ def main(memory):
                         print_say(a)
                     else:
                         print_say(memory.unknown)
-                except Exception:
+                except Exception as e:
                     q(memory)
             else:
                 print_say(memory.excuse)
-
-    # gimbiseo.save()
 
 if __name__ == '__main__':
     main(memory)

@@ -81,7 +81,7 @@ def main(memory):
                 except NameError as e:
                     print_say(e)
                     memory.record(q)
-                else:
+                except Exception as e:
                     print_say(memory.excuse)
             elif isinstance(q, GeneralQuestionAction):
                 try:
@@ -99,7 +99,7 @@ def main(memory):
                         print_say(a)
                     else:
                         print_say(memory.unknown)
-                except Exception:
+                except Exception as e:
                     q(memory)
             else:
                 print_say(memory.excuse)
