@@ -18,9 +18,8 @@ class Memory:
     _template = {'whatis': 'What is %s?', 'yes': 'Yes', 'no': 'No', 'get': 'I get', 'unknown': 'I don\'t know', 'think': 'I am thinking...'} 
     _dict = {}
     _locals = {}
-
-    def __init__(self):
-        self._globals = globals().copy()
+    _globals = globals().copy()
+    _history = []
 
     def __getitem__(self, k):
         if k in self._locals:
@@ -50,4 +49,26 @@ class Memory:
 
     def __getattr__(self, p):
         return self._template[p]
+
+    def record(self, s):
+        self._history.append(s)
+
+
+class Command(object):
+    '''[Summary for Class Command]Command has 2 (principal) propteries
+    name: name
+    function: function'''
+    def __init__(self, name, function):
+        self.name = name
+        self.function = function
+
+    def __call__(self, *args, **kwargs):
+        self.function(*args, **kwargs)
+
+
+def is_instance_of(i, c):
+    return c in i.INDIRECT_is_a or any(c in y.is_a for y in i.INDIRECT_is_a if hasattr(y, 'is_a'))
+
+def is_a(x, c):
+    return c in x.is_a or any(c in y.is_a for y in x.is_a if hasattr(y, 'is_a'))
 

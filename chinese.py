@@ -10,17 +10,17 @@ import types
 import pyparsing as pp
 import pyparsing_ext as ppx
 
-from gimbiseo.actions import *
+from actions import *
 
 _dict = {'事物': 'Thing', '对称关系':'SymmetricProperty', '传递关系': 'TransitiveProperty', '自反关系':'SymmetricProperty',
  '函数关系':'FunctionalProperty', '反函数关系':'InverseFunctionalProperty', '反对称关系':'AsymmetricProperty', '非自反关系':'IrreflexiveProperty'}
 
 
 class ChineseConfig:
-    def is_linking(self):
+    def is_instance_of(self):
         return self.relation == '是'
 
-    def is_kindOf(self):
+    def is_kind_of(self):
         return self.relation == '是一种'
 
     def what_query(self):
@@ -30,7 +30,7 @@ class ChineseConfig:
         return self.query == '谁'
 
     def what_who_query(self):
-        return self.query in {'谁', '什么'}
+        return self.query.content in {'谁', '什么'}
 
     def which_query(self):
         return self.query == '哪个'
@@ -40,63 +40,69 @@ class ChineseConfig:
 
 config(SentenceAction, ChineseConfig)
 
-''' Examples
-金秘书爱李英俊。
-谁爱李英俊？
-我爱学习。
-我爱什么？
-我爱学习吗？
-我的爱人是李英俊
-'''
 
-CNoun = pp.Word(pp.pyparsing_unicode.Chinese.alphanums)
-CNoun.addParseAction(ConceptAction)
-INoun = pp.QuotedString('"')
-INoun.addParseAction(IndividualAction)
-Noun = INoun('content') | CNoun('content')
+word = pp.Word(pp.pyparsing_unicode.Chinese.alphanums)
+word.addParseAction(ConceptAction)
+ind = pp.QuotedString('"')
+ind.addParseAction(IndividualAction)
+noun = ind('content') | word('content')
 
-DePhrase = Noun + pp.Suppress('的') + Noun
+SOME = pp.Literal('一些')
+ONLY = pp.Literal('只')
 
-Verb = pp.Word(pp.pyparsing_unicode.Chinese.alphas)
-Verb.addParseAction(RelationAction)
+Quantifier = SOME | ONLY
+Quantifier.addParseAction(QuantifierAction)
 
-Verb=  Verb('content') | Verb('content')
+dePhrase = noun + pp.Suppress('的') + noun
 
-def sentence(first, second, relation):
-    return (first + pp.Suppress('的') + relation + pp.Suppress('是') + second
-        | second + pp.Suppress('是') + first + pp.Suppress('的') + relation
-        | first + relation + second)
+verb = pp.Word(pp.pyparsing_unicode.Chinese.alphas)
+verb.addParseAction(RelationAction)
 
-statement = sentence(Noun('first'), Noun('second'), pp.Optional('不')('negative') + Verb('relation'))
+verb =  verb('content') | pp.Empty()
+
+def sentence(subj, obj, relation):
+    return (subj + pp.Suppress('的') + relation + pp.Suppress('是') + obj
+        | obj + pp.Suppress('是') + subj + pp.Suppress('的') + relation
+        | subj + pp.Suppress('与') + obj + relation
+        | subj + relation + obj)
+
+definition = noun('subj') + pp.Optional('不')('negative') + pp.Optional(SOME)('quantifier') + pp.oneOf(['是', '是一种'])('relation') + noun('obj')
+definition.addParseAction(DefinitionAction)
+statement = sentence(noun('subj'), noun('obj'), pp.Optional('不')('negative') + pp.Optional(ONLY)('quantifier') + verb('relation')  + pp.Optional(SOME)('quantifier'))
 generalQuestion = statement.copy() + pp.Suppress('吗' + pp.Optional('？'))
 generalQuestion.addParseAction(GeneralQuestionAction)
 statement.addParseAction(StatementAction)
 
-who = pp.Literal('谁')
-what = pp.Literal('什么')
-which = pp.Literal('哪个') + Noun('type')
-which_kind = pp.Literal('哪种') + Noun('type')
+who = pp.Literal('谁')('content')
+what = pp.Literal('什么')('content')
+which = pp.Literal('哪个')('content') + noun('type')
+which_kind = pp.Literal('哪种')('content') + noun('type')
 
 def set_type(t, type_='人'):
     t.type = type_
     return t
 
-who.addParseAction(set_type).addParseAction(VariableAction)
-what.addParseAction(VariableAction)
-which.addParseAction(VariableAction)
-which_kind.addParseAction(VariableConceptAction)
+who.addParseAction(set_type)
+# who.addParseAction(VariableAction)
+# what.addParseAction(VariableConceptAction)
+# which.addParseAction(VariableAction)
+# which_kind.addParseAction(VariableConceptAction)
 
-specialQuestion = (sentence(who('query') |what('query') | which('query') | which_kind('query'), Noun('second'), pp.Optional('不')('negative') + Verb('relation')) |
-sentence(Noun('first'), what('query') | which('query') | which_kind('query'), pp.Optional('不')('negative') + Verb('relation'))) + pp.Suppress('？')
+query= who | what | which | which_kind
+query.addParseAction(QueryAction)
+
+specialQuestion = (sentence(query('query'), noun('obj'), pp.Optional('不')('negative') + verb('relation')) |
+sentence(noun('subj'), query('query'), pp.Optional('不')('negative') + verb('relation'))) + pp.Suppress('？')
 specialQuestion.addParseAction(SpecialQuestionAction)
 
 question = specialQuestion | generalQuestion
-sentence = question | statement
+sentence = question | definition | statement
 
-def toLogic(s):
+def parse(s):
     return sentence.parseString(s, parseAll=True)[0]
 
 # import jieba
 # import logging
 # jieba.setLogLevel(logging.INFO)
-
+# 
+# print(parse('狗 喜欢 什么 ？'))

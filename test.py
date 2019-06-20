@@ -9,11 +9,11 @@ from actions import *
 from chinese import *
 from owlready2 import *
 
+
 PATH = pathlib.Path("kb")
 onto_path.append(PATH)
 gimbiseo = get_ontology("http://test.org/gimbiseo.owl")
 gimbiseo.metadata.comment.append("Human-Machine Dialogue System")
-
 
 def print_say(something, prompt='--',*args, **kwargs):
     print(prompt, something, *args, **kwargs)
@@ -24,7 +24,6 @@ def answer(q, memory):
     print_say(memory.template['think'], end='...')
     sync_reasoner(debug=0)
     return q(memory)
-
 
 class ChineseMemory(Memory):
     _template = {'whatis': '%s是什么?', 'yes': '是', 'no': '不是', 'get': '我知道了',
@@ -40,11 +39,24 @@ class ChineseMemory(Memory):
 memory = ChineseMemory()
 
 def main(memory):
+    qs = [
+    '"八公" 是 狗',
+    '狗 是一种 事物',
+    '"八公" 是 狗 吗？',
+    '狗 喜欢 骨头',
+    '骨头 是一种 事物',
+    '狗 喜欢 骨头',
+    '狗 喜欢 骨头 吗？',
+    '"八公" 喜欢 骨头 吗？',
+    '骨头 喜欢 骨头 吗？',
+    '狗 喜欢 什么 ？'
+    ]
     with gimbiseo:
-        while True:
+        for q in qs:
             # sh.say(q)
             try:
-                q = input('-- ')
+                # q = input('-- ')
+                print_say(q)
                 if q.startswith('%'):
                     cmd = q.lstrip('%').split(' ')
                     Command(cmd[0])(memory[arg] for arg in cmd[1:])
@@ -59,8 +71,17 @@ def main(memory):
                     a = q(memory)
                     if a:
                         print_say(memory.get)
-                except Exception as e:
-                    print(e)
+                        for h in memory._history:
+                            try:
+                                a = h(memory)
+                                if a:
+                                    memory._history.remove(h)
+                            except:
+                                pass
+                except NameError as e:
+                    print_say(e)
+                    memory.record(q)
+                else:
                     print_say(memory.excuse)
             elif isinstance(q, GeneralQuestionAction):
                 try:
