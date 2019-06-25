@@ -25,44 +25,44 @@ def answer(q, memory):
     sync_reasoner(debug=0)
     return q(memory)
 
-class ChineseMemory(Memory):
-    _template = {'whatis': '%s是什么?', 'yes': '是', 'no': '不是', 'get': '我知道了',
-     'unknown': '我不知道', 'think': '让我想一想', 'excuse':'能再说一遍吗？',
-     'inconsistent': '与已知的不一致'}
-    _dict = {'事物': 'Thing', '东西': 'Thing', '对称关系':'SymmetricProperty', '传递关系': 'TransitiveProperty', '自反关系':'SymmetricProperty',
-    '函数关系':'FunctionalProperty', '反函数关系':'InverseFunctionalProperty', '反对称关系':'AsymmetricProperty', '非自反关系':'IrreflexiveProperty'}
-    _globals = globals().copy()
-
-    def warning(self, s):
-        return '\%s 应该是一个 %s' % s
-
 memory = ChineseMemory()
 
 def main(memory):
     qs = [
     '"八公" 是 狗',
-    '狗 是一种 事物',
+    '狗 是一种 动物',
+    '动物 是一种 事物',
     '"八公" 是 狗 吗？',
+    '狗 是一种 什么 ？',
     '狗 喜欢 骨头',
     '骨头 是一种 事物',
     '狗 喜欢 骨头',
     '狗 喜欢 骨头 吗？',
     '"八公" 喜欢 骨头 吗？',
     '骨头 喜欢 骨头 吗？',
-    '狗 喜欢 什么 ？'
+    '狗 喜欢 什么 ？',
+    '"地球" 是 天体',
+    '天体 是一种 事物',
+    '"太阳" 是 天体',
+    '"地球" 围绕 "太阳"',
+    '什么 围绕 "太阳" ？',
+    '"月亮" 是 天体',
+    '"地球" 围绕 "月亮" 吗？',
+    '"月亮" 围绕 "地球"',
+    '"月亮" 围绕 什么？'
     ]
     with gimbiseo:
         for q in qs:
             # sh.say(q)
+            print(q)
             try:
-                # q = input('-- ')
-                print_say(q)
                 if q.startswith('%'):
                     cmd = q.lstrip('%').split(' ')
                     Command(cmd[0])(memory[arg] for arg in cmd[1:])
                 elif q == 'quit':
                     break
-                q = parse(q)
+                else:
+                    q = parse(q)
             except:
                 print_say(memory.excuse)
                 continue
@@ -71,34 +71,28 @@ def main(memory):
                     a = q(memory)
                     if a:
                         print_say(memory.get)
-                        for h in memory._history:
-                            try:
-                                a = h(memory)
-                                if a:
-                                    memory._history.remove(h)
-                            except:
-                                pass
+                        memory.re_exec()
                 except NameError as e:
                     print_say(e)
                     memory.record(q)
-                except Exception as e:
+                except Exception as ye:
                     print_say(memory.excuse)
             elif isinstance(q, GeneralQuestionAction):
                 try:
                     a = answer(q, memory)
                     if a:
-                        print_say(memory.yes)
+                        print(memory.yes)
                     else:
-                        print_say(memory.no)
+                        print(memory.no)
                 except Exception as e:
                     print(e)
             elif isinstance(q, SpecialQuestionAction):
                 try:
                     a = answer(q, memory)
                     if a:
-                        print_say(a)
+                        print(a)
                     else:
-                        print_say(memory.unknown)
+                        print(memory.unknown)
                 except Exception as e:
                     q(memory)
             else:

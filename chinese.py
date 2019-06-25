@@ -15,6 +15,17 @@ from actions import *
 _dict = {'事物': 'Thing', '对称关系':'SymmetricProperty', '传递关系': 'TransitiveProperty', '自反关系':'SymmetricProperty',
  '函数关系':'FunctionalProperty', '反函数关系':'InverseFunctionalProperty', '反对称关系':'AsymmetricProperty', '非自反关系':'IrreflexiveProperty'}
 
+class ChineseMemory(Memory):
+    _template = {'whatis': '%s是什么?', 'yes': '是', 'no': '不是', 'get': '我知道了',
+     'unknown': '我不知道', 'think': '让我想一想', 'excuse':'能再说一遍吗？',
+     'inconsistent': '与已知的不一致'}
+    _dict = {'事物': 'Thing', '东西': 'Thing', '对称关系':'SymmetricProperty', '传递关系': 'TransitiveProperty', '自反关系':'SymmetricProperty',
+    '函数关系':'FunctionalProperty', '反函数关系':'InverseFunctionalProperty', '反对称关系':'AsymmetricProperty', '非自反关系':'IrreflexiveProperty'}
+    _globals = globals().copy()
+
+    def warning(self, s):
+        return '\%s 应该是一个 %s.' % s
+
 
 class ChineseConfig:
     def is_instance_of(self):

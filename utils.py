@@ -3,6 +3,8 @@
 
 import jieba.posseg as pseg
 
+import copy
+
 def cut_flag(s):
     words = pseg.cut(s)
     return ' '.join(f'"{word_flag.word}/{word_flag.flag}"' if word_flag.flag in {'nr', 'ns', 'nrt', 'nt', 'r'}
@@ -43,6 +45,9 @@ class Memory:
     def __str__(self):
         return str(self._locals)
 
+    def __iter__(self):
+        return iter(self._locals.items())
+
     @property
     def template(self):
         return self._template
@@ -53,14 +58,37 @@ class Memory:
     def record(self, s):
         self._history.append(s)
 
+    def re_exec(self):
+        flag = True
+        while flag:
+            H = copy.deepcopy(self._history)
+            for h in H:
+                try:
+                    a = h(self)
+                    if a:
+                        self._history.remove(h)
+                        flag = True
+                except:
+                    pass
+            else:
+                flag = False
+
+commands = {'print': print}
 
 class Command(object):
-    '''[Summary for Class Command]Command has 2 (principal) propteries
-    name: name
-    function: function'''
-    def __init__(self, name, function):
+    '''Command class
+
+    name: name of the command
+    function: function of the command
+    '''
+    def __init__(self, name):
         self.name = name
-        self.function = function
+        if name in globals():
+            self.function = globals()[name]
+        elif name in commands:
+            self.function = commands[name]
+        else:
+            raise Excption('No such command')
 
     def __call__(self, *args, **kwargs):
         self.function(*args, **kwargs)
@@ -72,3 +100,9 @@ def is_instance_of(i, c):
 def is_a(x, c):
     return c in x.is_a or any(c in y.is_a for y in x.is_a if hasattr(y, 'is_a'))
 
+def proper(As):
+    for k, A in enumerate(As):
+        A = As.pop(0)
+        if not any(is_a(B, A) for B in As if hasattr(B,'is_a')):
+            As.append(A)
+    return As
