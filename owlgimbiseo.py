@@ -78,7 +78,7 @@ def main(memory):
                     else:
                         print(memory.unknown)
                 except Exception as e:
-                    p(memory)
+                    print(e)
             else:
                 print_(memory.excuse)
 
