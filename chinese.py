@@ -17,7 +17,7 @@ _dict = {'事物': 'Thing', '对称关系':'SymmetricProperty', '传递关系': 
 
 class ChineseMemory(Memory):
     _template = {'whatis': '%s是什么?', 'yes': '是', 'no': '不是', 'get': '我知道了',
-     'unknown': '我不知道', 'think': '让我想一想', 'excuse':'能再说一遍吗？',
+     'unknown': '我不知道', 'think': '让我想一想', 'excuse':'能再说一遍吗？', 'no_repeat': '不要重复',
      'inconsistent': '与已知的不一致'}
     _dict = {'事物': 'Thing', '东西': 'Thing', '对称关系':'SymmetricProperty', '传递关系': 'TransitiveProperty', '自反关系':'SymmetricProperty',
     '函数关系':'FunctionalProperty', '反函数关系':'InverseFunctionalProperty', '反对称关系':'AsymmetricProperty', '非自反关系':'IrreflexiveProperty'}
@@ -77,9 +77,9 @@ def sentence(subj, obj, relation):
         | subj + pp.Suppress('与') + obj + relation
         | subj + relation + obj)
 
-definition = noun('subj') + pp.Optional('不')('negative') + pp.Optional(SOME)('quantifier') + pp.oneOf(['是', '是一种'])('relation') + noun('obj')
+definition = noun('subj') + pp.Optional('不')('negative') + pp.Optional(ONLY)('only') + pp.oneOf(['是', '是一种'])('relation') + noun('obj')
 definition.addParseAction(DefinitionAction)
-statement = sentence(noun('subj'), noun('obj'), pp.Optional('不')('negative') + pp.Optional(ONLY)('quantifier') + verb('relation')  + pp.Optional(SOME)('quantifier'))
+statement = sentence(noun('subj'), noun('obj'), pp.Optional('不')('negative') + pp.Optional(ONLY)('only') + verb('relation')  + pp.Optional(SOME)('quantifier'))
 generalQuestion = statement.copy() + pp.Suppress('吗' + pp.Optional('？'))
 generalQuestion.addParseAction(GeneralQuestionAction)
 statement.addParseAction(StatementAction)

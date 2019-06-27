@@ -16,7 +16,7 @@ gimbiseo = get_ontology("http://test.org/gimbiseo.owl")
 gimbiseo.metadata.comment.append("Human-Machine Dialogue System")
 
 
-def print_(something, prompt='--',*args, **kwargs):
+def print_(something, prompt='--', *args, **kwargs):
     print(prompt, something, *args, **kwargs)
     # sh.say(something)
 
@@ -26,7 +26,7 @@ def answer(q, memory):
     try:
         sync_reasoner(debug=0)
     except Exception as e:
-        print(e)
+        print(e, end=' ')
     return q(memory)
 
 memory = ChineseMemory()
@@ -39,43 +39,46 @@ def main(memory):
                 if q.startswith('%'):
                     cmd = q.lstrip('%').split(' ')
                     Command(cmd[0])(memory[arg] for arg in cmd[1:])
-                    continue
                 elif q == 'quit':
                     break
                 else:
-                    q = parse(q)
+                    p = parse(q)
             except:
                 print_(memory.excuse)
                 continue
-            if isinstance(q, StatementAction):
+            if isinstance(p, StatementAction):
+                if p in memory.history:
+                    print(memory.no_repeat)
+                else:
+                    try:
+                        a = p(memory)
+                        if a:
+                            print_(memory.get)
+                            memory.re_exec()
+                        memory.record(q)
+                    except NameError as e:
+                        print_(e)
+                        memory.cache(p)
+                    except Exception as ye:
+                        print_(memory.excuse)
+            elif isinstance(p, GeneralQuestionAction):
                 try:
-                    a = q(memory)
-                    if a:
-                        print_(memory.get)
-                        memory.re_exec()
-                except NameError as e:
-                    print_(e)
-                    memory.record(q)
-                except Exception as ye:
-                    print_(memory.excuse)
-            elif isinstance(q, GeneralQuestionAction):
-                try:
-                    a = answer(q, memory)
+                    a = answer(p, memory)
                     if a:
                         print(memory.yes)
                     else:
                         print(memory.no)
                 except Exception as e:
                     print(e)
-            elif isinstance(q, SpecialQuestionAction):
+            elif isinstance(p, SpecialQuestionAction):
                 try:
-                    a = answer(q, memory)
+                    a = answer(p, memory)
                     if a:
                         print(a)
                     else:
                         print(memory.unknown)
                 except Exception as e:
-                    q(memory)
+                    p(memory)
             else:
                 print_(memory.excuse)
 

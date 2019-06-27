@@ -111,10 +111,7 @@ class StatementAction(SentenceAction):
             else:
                 self.subj.create(memory, obj)
         else:
-            if self.relation.content not in memory:
-                relation = self.relation.create(memory, ObjectProperty)
-            else:
-                relation = self.relation(memory)
+            relation = self.relation(memory)
             if isinstance(self.obj, IndividualAction):
                 if 'negative' in self:
                     subj.is_a.append(Not(relation.value(obj)))
@@ -125,12 +122,12 @@ class StatementAction(SentenceAction):
                         subj.is_a.append(relation.value(obj))
             else:
                 if 'negative' in self:
-                    if 'quantifier' in self:
+                    if 'only' in self:
                         subj.is_a.append(relation.some(Not(obj)))
                     else:
                         subj.is_a.append(relation.only(Not(obj)))
                 else:    
-                    if 'quantifier' in self:
+                    if 'only' in self:
                         subj.is_a.append(relation.only(obj))
                     else:
                         subj.is_a.append(relation.some(obj))
@@ -175,18 +172,22 @@ class GeneralQuestionAction(SentenceAction):
         obj = self.obj(memory)
         subj = self.subj(memory)
         if self.is_instance_of():
-            return isinstance(subj, obj) or obj in subj.is_a
+            ans = isinstance(subj, obj) or obj in subj.is_a
         elif self.is_kind_of():
-            return issubclass(subj, obj) or obj in subj.is_a
+            ans = issubclass(subj, obj) or obj in subj.is_a
         else:
             if isinstance(self.obj, IndividualAction):
-                return obj in getattr(subj, self.relation.content) or obj in getattr(subj, 'INDIRECT_'+self.relation)
+                ans = obj in getattr(subj, self.relation.content) or obj in getattr(subj, 'INDIRECT_'+self.relation)
             else:
                 c = self.relation(memory).some(obj)
                 if isinstance(self.subj, IndividualAction):
-                    return is_instance_of(subj, c)
+                    ans = is_instance_of(subj, c)
                 else:
-                    return is_a(subj, c)
+                    ans = is_a(subj, c)
+        if 'negative' in self:
+            return not ans
+        else:
+            return ans
 
 class SpecialQuestionAction(SentenceAction):
     names = ('query',) + SentenceAction.names
@@ -216,41 +217,49 @@ class SpecialQuestionAction(SentenceAction):
         if self.is_instance_of():
             if self.who_query():
                 # a for a in known.instances if isinstance(a, memory['Person'])
-                return ', '.join(k for k, a in memory.items() if is_a(a, known) and isinstance(a, memory['Person']))
+                return ', '.join(k for k, a in memory if is_a(a, known) and is_instance_of(a, memory['Person']))
             elif self.what_query():
                 if isinstance(known, IndividualAction):
                     return ', '.join(A.name for A in proper(known.is_instance_of) if hasattr(A, 'name'))
                 else:
                     # known.instances
-                    return ', '.join(k for k, a in memory.items() if is_a(a, known))
+                    return ', '.join(k for k, a in memory if is_a(a, known))
             elif self.which_query():
                 if isinstance(known, IndividualAction):
                     return ', '.join(A.name for A in proper(known.is_instance_of) if hasattr(A, 'name'))
                 else:
-                    return ', '.join(k for k, a in memory.items() if is_a(a, known) and  isinstance(a, memory['subj']))
+                    return ', '.join(k for k, a in memory if is_a(a, known) and  is_a(a, self.type(memory)))
                     
         elif self.is_kind_of():
             if self.what_query():
                 if 'subj' in self:
                     return ', '.join(A.name for A in proper(known.is_a) if hasattr(A, 'name'))
                 else:
-                    return ', '.join(k for k, a in memory.items() if is_a(a, known))
+                    return ', '.join(k for k, a in memory if is_a(a, known))
         else:
+            relation = self.relation(memory)
+            inds = [a for k, a in memory if isinstance(a, Thing)]
             if self.who_query():
                 if 'subj' in self:
-                    return ', '.join(a.name for a in getattr(known, 'INDIRECT_'+self.relation) and memory['Person'] in a.is_instance_of)
+                    return ', '.join(a.name for a in getattr(known, 'INDIRECT_'+self.relation) and is_instance_of(a, memory['Person']))
                 else:
-                    return ', '.join(a.name for k, a in memory if memory['Person'] in a.is_instance_of and known in getattr(a, 'INDIRECT_'+self.relation))
+                    return ', '.join(a.name for a in inds if memory['Person'] in a.is_instance_of and known in getattr(a, 'INDIRECT_'+self.relation))
             elif self.what_query():
                 if 'subj' in self:
                     return ', '.join(a.name for a in getattr(known, 'INDIRECT_'+self.relation))
                 else:
-                    return ', '.join(a.name for k, a in memory if isinstance(a, Thing) and known in getattr(a, 'INDIRECT_'+self.relation))
-            # elif self.which_query():
-            #     if isinstance(known, ConceptAction):
-            #         return ', '.join(k for k, a in memory.items() if is_a(a, known) and  isinstance(a, memory['subj']))
-            #     else:
-            #         return ', '.join(k for k, a in memory.items() if is_a(known, a))
+                    return ', '.join(a.name for a in inds if known in getattr(a, 'INDIRECT_'+self.relation))
+            else:
+                if 'subj' in self:
+                    if isinstance(self.subj, IndividualAction):
+                        return ', '.join(a.name for a in getattr(known, 'INDIRECT_'+self.relation) if isinstance(a, Thing) and is_instance_of(a, self.query.type(memory)))
+                    else:
+                        return ', '.join(a.name for a in inds if is_instance_of(a, self.query.type(memory)) and is_instance_of(known, relation.value(a)))
+                else:
+                    if isinstance(self.obj, IndividualAction):
+                        return ', '.join(a.name for a in inds if is_instance_of(a, self.query.type(memory)) and known in getattr(a, 'INDIRECT_'+self.relation))
+                    else:
+                        return ', '.join(a.name for a in inds if is_instance_of(a, self.query.type(memory)) and is_instance_of(a, relation.some(known)))
 
 
 class CompoundSentenceAction(BaseAction):

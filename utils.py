@@ -4,6 +4,7 @@
 import jieba.posseg as pseg
 
 import copy
+import types
 
 def cut_flag(s):
     words = pseg.cut(s)
@@ -21,6 +22,7 @@ class Memory:
     _dict = {}
     _locals = {}
     _globals = globals().copy()
+    _cache = []
     _history = []
 
     def __getitem__(self, k):
@@ -52,26 +54,49 @@ class Memory:
     def template(self):
         return self._template
 
+    @property
+    def history(self):
+        return self._history
+    
+
     def __getattr__(self, p):
         return self._template[p]
 
     def record(self, s):
         self._history.append(s)
 
+    def cache(self, s):
+        self._cache.append(s)
+
     def re_exec(self):
         flag = True
         while flag:
-            H = copy.deepcopy(self._history)
+            H = copy.deepcopy(self._cache)
             for h in H:
                 try:
                     a = h(self)
                     if a:
-                        self._history.remove(h)
+                        self._cache.remove(h)
                         flag = True
                 except:
                     pass
             else:
                 flag = False
+
+    def create(self, name, bases=()):
+        if isinstance(bases, tuple):
+            bases = (bases,)
+        x = types.new_class(name, bases)
+        self[name]=x
+        return x
+
+    def new_concept(self, *args, **kwargs):
+        return create(self, *args, **kwargs)
+
+    def new_ind(self, name, klass=object):
+        x = klass(name)
+        self[name]=x
+        return x
 
 commands = {'print': print}
 
@@ -95,7 +120,8 @@ class Command(object):
 
 
 def is_instance_of(i, c):
-    return c in i.INDIRECT_is_a or any(c in y.is_a for y in i.INDIRECT_is_a if hasattr(y, 'is_a'))
+    # i: Thing
+    return c in i.is_instance_of or any(c in y.is_a for y in i.INDIRECT_is_instance_of if hasattr(y, 'is_a'))
 
 def is_a(x, c):
     return c in x.is_a or any(c in y.is_a for y in x.is_a if hasattr(y, 'is_a'))
@@ -103,6 +129,8 @@ def is_a(x, c):
 def proper(As):
     for k, A in enumerate(As):
         A = As.pop(0)
-        if not any(is_a(B, A) for B in As if hasattr(B,'is_a')):
+        if not any(is_a(B, A) or B==A for B in As if hasattr(B,'is_a')):
             As.append(A)
     return As
+
+
