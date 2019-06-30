@@ -9,6 +9,7 @@ just run owlgimbiseo.py
 运行 owlgimbiseo.py
 
 # 示例
+(English is deprecated currently)
 ```
 -- Who dose Alice love?
 I am thinking...
