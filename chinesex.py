@@ -71,32 +71,21 @@ verb.addParseAction(RelationAction)
 
 verb =  verb('content') | pp.Empty()
 
-# def sentence(subj, obj, relation):
-#     return (subj + pp.Suppress('的') + relation + pp.Suppress('是') + obj
-#         | obj + pp.Suppress('是') + subj + pp.Suppress('的') + relation
-#         | subj + pp.Suppress('与') + obj + relation
-#         | subj + relation + obj)
-
 concept = pp.Forward()
 vp = pp.Optional('不')('negative') + pp.Optional('只')('only') + verb('relation') + concept('concept')
 vp.addParseAction(VpAction)
 
-adj = word + pp.Suppress('的').leaveWhitespace() | vp + pp.Suppress('的')
+adj = word + pp.Literal('的') | vp + pp.Suppress('的')
 # de = noun.copy()('owner') + pp.Suppress('的') + word.copy()('relation')
 # de.addParseAction(DeAction)
 np = pp.delimitedList(adj, delim=' ')('concepts') + word
-
 np.addParseAction(AndAction)
 concept <<= word | np
 
-x= np.parseString('爱 狗 的 人')
-print(x[0])
-raise
 
-
-definition = noun('subj') + pp.Optional('不')('negative') + pp.Optional(SOME)('quantifier') + pp.oneOf(['是', '是一种'])('relation') + noun('obj')
+definition = noun('subj') + pp.Optional('不')('negative') + pp.oneOf(['是', '是一种'])('relation') + np('obj')
 definition.addParseAction(DefinitionAction)
-statement = noun('subj')+ pp.Optional('不')('negative') + pp.Optional(ONLY)('quantifier') + verb('relation')  + pp.Optional(SOME)('quantifier') + noun('obj')
+statement = noun('subj')+ pp.Optional('不')('negative') + pp.Optional(ONLY)('quantifier') + verb('relation')  + pp.Optional(SOME)('quantifier') + concept('obj')
 generalQuestion = statement.copy() + pp.Suppress('吗' + pp.Optional('？'))
 generalQuestion.addParseAction(GeneralQuestionAction)
 statement.addParseAction(StatementAction)
@@ -128,6 +117,9 @@ sentence = question | definition | statement
 
 def parse(s):
     return sentence.parseString(s, parseAll=True)[0]
+
+x= concept.parseString('喜欢 骨头 的 狗', parseAll=True)
+print(x)
 
 # import jieba
 # import logging

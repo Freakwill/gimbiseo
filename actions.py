@@ -43,7 +43,6 @@ class BaseAction:
         pass
 
 
-
 class SentenceAction(BaseAction):
     names = ('subj', 'obj', 'relation', 'negative')
 
@@ -349,6 +348,48 @@ class ConceptAction(ConstantAction):
         rel = types.new_class(self.content, bases=bases)
         memory.update({self.content: rel})
         return rel
+
+
+class VpAction(ConceptAction):
+    names = ('concept', 'relation')
+    def exec(self, memory):
+        rel = self.relation(memory)
+        A = self.concept(memory)
+        if 'negative' in self:
+            if 'only' in self:
+                return rel.some(Not(A))
+            else:
+                return rel.only(Not(A))
+        else:
+            if 'only' in self:
+                return rel.some(A)
+            else:
+                return rel.only(A)
+
+    def __str__(self):
+        if 'only' in self:
+            return '%s*(?, %s)' % (self.relation, self.concept)
+        else:
+            return '%s(?, %s)' % (self.relation, self.concept)
+
+class AndAction(ConceptAction):
+    names = ('concepts', 'concept', 'content')
+    def exec(self, memory):
+        A = [concept(memory) for concept in self.concepts]
+        return And(A)
+
+    def __str__(self):
+        return f'[{self.content} & {"& ".join(str(concept) for concept in self.concepts)}]'
+
+class DeAction:
+    names = ('owner', 'relation')
+    def exec(self, memory):
+        rel = self.relation(memory, bases=FunctionalProperty)
+        A = self.owner(memory)
+        name = self.owner + '的'+self.relation
+        x = memory.new_ind(name, klass=Thing)
+        return x
+
 
 class RelationAction(ConstantAction):
     def eval(self, memory, check=False):

@@ -1,19 +1,33 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import jieba.posseg as pseg
-
 import copy
 import types
 
-def cut_flag(s):
+import jieba
+import jieba.posseg as pseg
+import logging
+jieba.setLogLevel(logging.INFO)
+
+def cut_(s):
     words = pseg.cut(s)
-    return ' '.join(f'"{word_flag.word}/{word_flag.flag}"' if word_flag.flag in {'nr', 'ns', 'nrt', 'nt', 'r'}
-    else f'{word_flag.word}/{word_flag.flag}' for word_flag in words)
+    return [word for word in words if word.flag != 'x']
+
+def convert(w):
+    if w.flag in {'nr', 'ns', 'nrt', 'nt', 'r', 'm'}:
+        return f'"{w.word}"'
+    elif w.flag == 'uj':
+        return w.word
+    else:
+        return f'{w.word}/{w.flag}'
+
+def cut_flag(s):
+    words = cut_(s)
+    return ' '.join(map(convert, words))
 
 def cut(s):
-    words = pseg.cut(s)
-    return ' '.join(f'"{word_flag.word}"' if word_flag.flag in {'nr', 'ns', 'nrt', 'nt'}
+    words = cut_(s)
+    return ' '.join(f'"{word_flag.word}"' if word_flag.flag in {'nr', 'ns', 'nrt', 'nt', 'm'}
     else word_flag.word for word_flag in words)
 
 class Memory:
@@ -121,10 +135,10 @@ class Command(object):
 
 def is_instance_of(i, c):
     # i: Thing
-    return c in i.is_instance_of or any(c in y.is_a for y in i.INDIRECT_is_instance_of if hasattr(y, 'is_a'))
+    return c in i.is_instance_of or any(is_a(y, c) for y in i.INDIRECT_is_instance_of if hasattr(y, 'is_a'))
 
 def is_a(x, c):
-    return c in x.is_a or any(c in y.is_a for y in x.is_a if hasattr(y, 'is_a'))
+    return c in x.is_a or any(is_a(y, c) for y in x.is_a if hasattr(y, 'is_a'))
 
 def proper(As):
     for k, A in enumerate(As):

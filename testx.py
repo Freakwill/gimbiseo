@@ -6,7 +6,7 @@ import sh
 
 from utils import *
 from actions import *
-from chinese import *
+from chinesex import *
 from owlready2 import *
 
 
@@ -44,7 +44,7 @@ def main(memory):
     '狗 喜欢 骨头':'不要重复',
     '狗 喜欢 骨头 吗？':'是',
     '"八公" 喜欢 骨头 吗？':'是',
-    '"八公" 不 喜欢 骨头 吗？':'不是',
+    '"八公" 是 喜欢 骨头 的 狗 吗？':'是',
     '骨头 喜欢 骨头 吗？':'不是',
     '狗 喜欢 什么 ？':'骨头',
     # '喜欢 是一种 自反关系',
