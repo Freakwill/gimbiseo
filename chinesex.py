@@ -76,7 +76,12 @@ adj = word + pp.Literal('的') | vp + pp.Suppress('的')
 # de = noun.copy()('owner') + pp.Suppress('的') + word.copy()('relation')
 # de.addParseAction(DeAction)
 np = pp.delimitedList(adj, delim=' ')('concepts') + word
-np.addParseAction(AndAction)
+np.addParseAction(NpAction)
+# ns = pp.infixNotation(word | np,
+#             [# ('-', 1, pp.opAssoc.RIGHT),
+#             (pp.Keyword('c:和'), 2, pp.opAssoc.LEFT, AndAction),
+#             (pp.Keyword('c:或'), 2, pp.opAssoc.LEFT, OrAction),
+#             ])
 concept <<= word | np
 
 
@@ -120,8 +125,8 @@ def parse(s, cut=False):
         s = cut_flag(s)
     return sentence.parseString(s, parseAll=True)[0]
 
-# x= parse('"八公" 是 v:喜欢 骨头 的 狗 吗？')
-# print(x.toDL())
+x= parse('"八公" 是 v:喜欢 骨头 的 狗 吗？')
+print(x.toDL())
 
 # x= parse('狗是一种什么？', True)
 # print(x)

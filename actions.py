@@ -434,17 +434,46 @@ class VpAction(ConceptAction):
                 else:
                     return f'∃{self.relation}.{self.content}'
 
-class AndAction(ConceptAction):
+class NpAction(ConceptAction):
     names = ('concepts', 'content')
     def eval(self, memory):
-        A = [concept(memory) for concept in self.concepts]
-        return And(A)
+        return And([concept(memory) for concept in self.concepts])
 
     def __str__(self):
         return f'({self.content} & {"& ".join(str(concept) for concept in self.concepts)})'
 
     def toDL(self):
         return f'({self.content} & {"& ".join(concept.toDL() for concept in self.concepts)})'
+
+class CompoundConceptAction(ConceptAction):
+    names = ('concepts',)
+    def __init__(self):
+        super(CompoundConceptAction, self).__init__()
+        self.concepts = self.tokens
+        print(self.tokens)
+
+class AndAction(CompoundConceptAction):
+
+    def eval(self, memory):
+        return And([concept(memory) for concept in self.concepts])
+
+    def __str__(self):
+        return "& ".join(str(concept) for concept in self.concepts)
+
+    def toDL(self):
+        return "& ".join(concept.toDL() for concept in self.concepts)
+
+
+class OrAction(CompoundConceptAction):
+
+    def eval(self, memory):
+        return Or([concept(memory) for concept in self.concepts])
+
+    def __str__(self):
+        return "| ".join(str(concept) for concept in self.concepts)
+
+    def toDL(self):
+        return "| ".join(concept.toDL() for concept in self.concepts)
 
 class DeAction:
     names = ('owner', 'relation')
