@@ -11,6 +11,7 @@ import pyparsing as pp
 import pyparsing_ext as ppx
 
 from actions import *
+from chinese_cut import *
 
 _dict = {'事物': 'Thing', '对称关系':'SymmetricProperty', '传递关系': 'TransitiveProperty', '自反关系':'SymmetricProperty',
  '函数关系':'FunctionalProperty', '反函数关系':'InverseFunctionalProperty', '反对称关系':'AsymmetricProperty', '非自反关系':'IrreflexiveProperty'}
@@ -114,17 +115,13 @@ specialQuestion.addParseAction(SpecialQuestionAction)
 question = specialQuestion | generalQuestion
 sentence = question | definition | statement
 
-def parse(s):
+def parse(s, cut=False):
+    if cut:
+        s = cut_flag(s)
     return sentence.parseString(s, parseAll=True)[0]
 
 # x= parse('"八公" 是 v:喜欢 骨头 的 狗 吗？')
 # print(x.toDL())
 
-# x= parse('狗 是一种 什么？')
+# x= parse('狗是一种什么？', True)
 # print(x)
-
-# import jieba
-# import logging
-# jieba.setLogLevel(logging.INFO)
-# 
-# print(parse('狗 喜欢 什么 ？'))
