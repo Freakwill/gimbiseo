@@ -16,7 +16,8 @@ just run owlgimbiseo.py
 
 # 测试
 run test.py
-### 结果
+
+## 结果
     -- "八公" 是 狗
     -- 狗是什么?
     -- 狗 是一种 事物
@@ -38,7 +39,8 @@ run test.py
     -- 狗 喜欢 什么 ？
     -- 让我想一想...-- 骨头
     
-### 包含复合名词
+## 包含复合名词
+run testx.py
 
     -- "八公" 是 狗
     -- 狗是什么?
@@ -107,3 +109,8 @@ I am thinking...
 I am thinking...
 -- Yes
 ```
+
+# TODO
+[ ] 实现复合概念
+[ ] GUI设计
+[ ] 与机器学习方法结合
