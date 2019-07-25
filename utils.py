@@ -4,31 +4,6 @@
 import copy
 import types
 
-import jieba
-import jieba.posseg as pseg
-import logging
-jieba.setLogLevel(logging.INFO)
-
-def cut_(s):
-    words = pseg.cut(s)
-    return [word for word in words if word.flag != 'x']
-
-def convert(w):
-    if w.flag in {'nr', 'ns', 'nrt', 'nt', 'r', 'm'}:
-        return f'"{w.word}"'
-    elif w.flag == 'uj':
-        return w.word
-    else:
-        return f'{w.word}/{w.flag}'
-
-def cut_flag(s):
-    words = cut_(s)
-    return ' '.join(map(convert, words))
-
-def cut(s):
-    words = cut_(s)
-    return ' '.join(f'"{word_flag.word}"' if word_flag.flag in {'nr', 'ns', 'nrt', 'nt', 'm'}
-    else word_flag.word for word_flag in words)
 
 class Memory:
 
@@ -132,12 +107,17 @@ class Command(object):
     def __call__(self, *args, **kwargs):
         self.function(*args, **kwargs)
 
+from owlready2 import *
 
 def is_instance_of(i, c):
     # i: Thing
+    if isinstance(c, And):
+        return all(is_instance_of(i, cc) for cc in c.Classes)
     return c in i.is_instance_of or any(is_a(y, c) for y in i.INDIRECT_is_instance_of if hasattr(y, 'is_a'))
 
 def is_a(x, c):
+    if isinstance(c, And):
+        return all(is_a(i, cc) for cc in c.Classes)
     return c in x.is_a or any(is_a(y, c) for y in x.is_a if hasattr(y, 'is_a'))
 
 def proper(As):
@@ -146,5 +126,4 @@ def proper(As):
         if not any(is_a(B, A) or B==A for B in As if hasattr(B,'is_a')):
             As.append(A)
     return As
-
 

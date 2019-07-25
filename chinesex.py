@@ -117,8 +117,8 @@ sentence = question | definition | statement
 def parse(s):
     return sentence.parseString(s, parseAll=True)[0]
 
-x= parse('"八公" 是 v:喜欢 骨头 的 狗 吗？')
-print(x.toDL())
+# x= parse('"八公" 是 v:喜欢 骨头 的 狗 吗？')
+# print(x.toDL())
 
 # x= parse('狗 是一种 什么？')
 # print(x)
