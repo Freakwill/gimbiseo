@@ -75,61 +75,51 @@ class SentenceAction(BaseAction):
     def __call__(self, memory):
         return self.exec(memory)
 
+    def toDL(self):
+        if isinstance(self.obj, IndividualAction):
+            if 'negative' in self:
+                return f'{self.subj}:~∃{self.relation}.{{{self.obj}}}'
+            else:
+                return f'{self.subj}:∃{self.relation}.{{{self.obj}}}'
+        else:
+            if 'negative' in self:
+                if 'only' in self:
+                    return f'{self.subj}:~∀{self.relation}.{self.obj}'
+                else:
+                    return f'{self.subj}:~∃{self.relation}.{self.obj}'
+            else:    
+                if 'only' in self:
+                    return f'{self.subj}:∀{self.relation}.{self.obj}'
+                else:
+                    return f'{self.subj}:∃{self.relation}.{self.obj}'
+
+
 class StatementAction(SentenceAction):
 
     def exec(self, memory):
         
         subj = self.subj(memory)
         obj = self.obj(memory)
-        if self.is_instance_of():
-            if subj:
-                if 'negative' in self:
-                    if obj in subj.is_a:
-                        print(memory.inconsistent)
-                    else:
-                        subj.is_a.append(Not(obj))
-                else:
-                    if Not(obj) in subj.is_a:
-                        print(memory.inconsistent)
-                    else:
-                        subj.is_a.append(obj)
+        relation = self.relation(memory)
+        if isinstance(self.obj, IndividualAction):
+            if 'negative' in self:
+                subj.is_a.append(Not(relation.value(obj)))
             else:
-                self.subj.create(memory, obj)
-        elif self.is_kind_of():
-            if subj:
-                if 'negative' in self:
-                    if obj in subj.is_a:
-                        print(memory.inconsistent)
-                    else:
-                        subj.is_a.append(Not(obj))
+                if isinstance(self.subj, IndividualAction):
+                    getattr(subj, self.relation.content).append(obj)
                 else:
-                    if Not(obj) in subj.is_a:
-                        print(memory.inconsistent)
-                    else:
-                        subj.is_a.append(obj)
-            else:
-                self.subj.create(memory, obj)
+                    subj.is_a.append(relation.value(obj))
         else:
-            relation = self.relation(memory)
-            if isinstance(self.obj, IndividualAction):
-                if 'negative' in self:
-                    subj.is_a.append(Not(relation.value(obj)))
+            if 'negative' in self:
+                if 'only' in self:
+                    subj.is_a.append(relation.some(Not(obj)))
                 else:
-                    if isinstance(self.subj, IndividualAction):
-                        getattr(subj, self.relation.content).append(obj)
-                    else:
-                        subj.is_a.append(relation.value(obj))
-            else:
-                if 'negative' in self:
-                    if 'only' in self:
-                        subj.is_a.append(relation.some(Not(obj)))
-                    else:
-                        subj.is_a.append(relation.only(Not(obj)))
-                else:    
-                    if 'only' in self:
-                        subj.is_a.append(relation.only(obj))
-                    else:
-                        subj.is_a.append(relation.some(obj))
+                    subj.is_a.append(relation.only(Not(obj)))
+            else:    
+                if 'only' in self:
+                    subj.is_a.append(relation.only(obj))
+                else:
+                    subj.is_a.append(relation.some(obj))
         return True
 
 
@@ -162,18 +152,51 @@ class DefinitionAction(StatementAction):
                 self.subj.create(memory, obj)
         return True
 
+    def toDL(self):
+        if self.is_instance_of():
+            if 'negative' in self:
+                return f'{self.subj} : ~{self.obj.toDL()}'
+            else:
+                return f'{self.subj} : {self.obj.toDL()}'
+        elif self.is_kind_of():
+            if 'negative' in self:
+                return f'{self.subj} <: ~{self.obj.toDL()}'
+            else:
+                return f'{self.subj} <: {self.obj.toDL()}'
+
+
 class GeneralQuestionAction(SentenceAction):
 
     def toFormula(self):
         return super(GeneralQuestionAction, self).toFormula() + '?'
 
-    def exec(self, memory):
-        obj = self.obj(memory)
-        subj = self.subj(memory)
+    def toDL(self):
         if self.is_instance_of():
-            ans = isinstance(subj, obj) or obj in subj.is_a
+            if 'negative' in self:
+                return f'{self.subj} : ~{self.obj.toDL()}?'
+            else:
+                return f'{self.subj} : {self.obj.toDL()}?'
         elif self.is_kind_of():
-            ans = issubclass(subj, obj) or obj in subj.is_a
+            if 'negative' in self:
+                return f'{self.subj} <: ~{self.obj.toDL()}?'
+            else:
+                return f'{self.subj} <: {self.obj.toDL()}?'
+        else:
+            return super(GeneralQuestionAction, self).toDL() + '?'
+
+    def exec(self, memory):
+        subj = self.subj(memory)
+        obj = self.obj(memory)
+        if self.is_instance_of():
+            if isinstance(obj, type):
+                ans = isinstance(subj, obj) or is_instance_of(subj, obj)
+            else:
+                ans = is_instance_of(subj, obj)
+        elif self.is_kind_of():
+            if isinstance(obj, type):
+                ans = issubclass(subj, obj) or is_instance_of(subj, obj)
+            else:
+                ans = is_a(subj, obj)
         else:
             if isinstance(self.obj, IndividualAction):
                 ans = obj in getattr(subj, self.relation.content) or obj in getattr(subj, 'INDIRECT_'+self.relation)
@@ -311,6 +334,9 @@ class AtomAction(BaseAction):
     def containedin(self, memory):
         return self.content in memory
 
+    def toDL(self):
+        return self.content
+
 
 class VariableAction(AtomAction):
     names = ('type',) + AtomAction.names
@@ -351,39 +377,78 @@ class ConceptAction(ConstantAction):
 
 
 class VpAction(ConceptAction):
-    names = ('concept', 'relation')
-    def exec(self, memory):
+    names = ('content', 'relation')
+    def eval(self, memory):
         rel = self.relation(memory)
-        A = self.concept(memory)
-        if 'negative' in self:
-            if 'only' in self:
-                return rel.some(Not(A))
+        A = self.content(memory)
+        if isinstance(self.content, IndividualAction):
+            if 'negative' in self:
+                if 'only' in self:
+                    return rel.some(Not(OneOf({A})))
+                else:
+                    return rel.only(Not(OneOf({A})))
             else:
-                return rel.only(Not(A))
+                if 'only' in self:
+                    return rel.only(OneOf({A}))
+                else:
+                    return rel.value(A)
         else:
-            if 'only' in self:
-                return rel.some(A)
+            if 'negative' in self:
+                if 'only' in self:
+                    return rel.some(Not(A))
+                else:
+                    return rel.only(Not(A))
             else:
-                return rel.only(A)
+                if 'only' in self:
+                    return rel.some(A)
+                else:
+                    return rel.only(A)
 
     def __str__(self):
         if 'only' in self:
-            return '%s*(?, %s)' % (self.relation, self.concept)
+            return '%s*(?, %s)' % (self.relation, self.content)
         else:
-            return '%s(?, %s)' % (self.relation, self.concept)
+            return '%s(?, %s)' % (self.relation, self.content)
+
+    def toDL(self):
+        if isinstance(self.content, IndividualAction):
+            if 'negative' in self:
+                if 'only' in self:
+                    return f'∃{self.relation}.~{{{self.content}}}'
+                else:
+                    return f'∀{self.relation}.~{{{self.content}}}'
+            else:
+                if 'only' in self:
+                    return f'∀{self.relation}.{{{self.content}}}'
+                else:
+                    return f'∃{self.relation}.{{{self.content}}}'
+        else:
+            if 'negative' in self:
+                if 'only' in self:
+                    return f'∃{self.relation}.~{self.content}'
+                else:
+                    return f'∀{self.relation}.~{self.content}'
+            else:
+                if 'only' in self:
+                    return f'∀{self.relation}.{self.content}'
+                else:
+                    return f'∃{self.relation}.{self.content}'
 
 class AndAction(ConceptAction):
-    names = ('concepts', 'concept', 'content')
-    def exec(self, memory):
+    names = ('concepts', 'content')
+    def eval(self, memory):
         A = [concept(memory) for concept in self.concepts]
         return And(A)
 
     def __str__(self):
-        return f'[{self.content} & {"& ".join(str(concept) for concept in self.concepts)}]'
+        return f'({self.content} & {"& ".join(str(concept) for concept in self.concepts)})'
+
+    def toDL(self):
+        return f'({self.content} & {"& ".join(concept.toDL() for concept in self.concepts)})'
 
 class DeAction:
     names = ('owner', 'relation')
-    def exec(self, memory):
+    def eval(self, memory):
         rel = self.relation(memory, bases=FunctionalProperty)
         A = self.owner(memory)
         name = self.owner + '的'+self.relation

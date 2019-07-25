@@ -51,10 +51,8 @@ class ChineseConfig:
 
 config(SentenceAction, ChineseConfig)
 
-
 word = pp.Word(pp.pyparsing_unicode.Chinese.alphanums)('content')
 word.addParseAction(ConceptAction)
-
 
 ind = pp.QuotedString('"')
 ind.addParseAction(IndividualAction)
@@ -66,13 +64,11 @@ ONLY = pp.Literal('只')
 Quantifier = SOME | ONLY
 Quantifier.addParseAction(QuantifierAction)
 
-verb = pp.Word(pp.pyparsing_unicode.Chinese.alphas)
+verb = pp.Suppress('v:') + pp.Word(pp.pyparsing_unicode.Chinese.alphas)('content')
 verb.addParseAction(RelationAction)
 
-verb =  verb('content') | pp.Empty()
-
 concept = pp.Forward()
-vp = pp.Optional('不')('negative') + pp.Optional('只')('only') + verb('relation') + concept('concept')
+vp = pp.Optional('不')('negative') + pp.Optional(ONLY) + verb('relation') + noun
 vp.addParseAction(VpAction)
 
 adj = word + pp.Literal('的') | vp + pp.Suppress('的')
@@ -83,12 +79,14 @@ np.addParseAction(AndAction)
 concept <<= word | np
 
 
-definition = noun('subj') + pp.Optional('不')('negative') + pp.oneOf(['是', '是一种'])('relation') + np('obj')
-definition.addParseAction(DefinitionAction)
+definition = noun('subj') + pp.Optional('不')('negative') + pp.oneOf(['是', '是一种'])('relation') + concept('obj')
 statement = noun('subj')+ pp.Optional('不')('negative') + pp.Optional(ONLY)('quantifier') + verb('relation')  + pp.Optional(SOME)('quantifier') + concept('obj')
-generalQuestion = statement.copy() + pp.Suppress('吗' + pp.Optional('？'))
-generalQuestion.addParseAction(GeneralQuestionAction)
+generalQuestion = (definition.copy()|statement.copy()) + pp.Suppress('吗' + pp.Optional('？'))
+
+definition.addParseAction(DefinitionAction)
 statement.addParseAction(StatementAction)
+generalQuestion.addParseAction(GeneralQuestionAction)
+
 
 who = pp.Literal('谁')('content')
 what = pp.Literal('什么')('content')
@@ -108,8 +106,9 @@ who.addParseAction(set_type)
 query= who | what | which | which_kind
 query.addParseAction(QueryAction)
 
-specialQuestion = (query('query') + noun('obj') + pp.Optional('不')('negative') + verb('relation') |
-noun('subj') + pp.Optional('不')('negative') + verb('relation') + query('query')) + pp.Suppress('？')
+specialQuestion = (query('query') + noun('obj') + pp.Optional('不')('negative') + (verb('relation') | pp.oneOf(['是', '是一种'])('relation')) |
+noun('subj') + pp.Optional('不')('negative') + (verb('relation') | pp.oneOf(['是', '是一种'])('relation')) + query('query')) + pp.Suppress('？')
+
 specialQuestion.addParseAction(SpecialQuestionAction)
 
 question = specialQuestion | generalQuestion
@@ -118,8 +117,11 @@ sentence = question | definition | statement
 def parse(s):
     return sentence.parseString(s, parseAll=True)[0]
 
-x= concept.parseString('喜欢 骨头 的 狗', parseAll=True)
-print(x)
+x= parse('"八公" 是 v:喜欢 骨头 的 狗 吗？')
+print(x.toDL())
+
+# x= parse('狗 是一种 什么？')
+# print(x)
 
 # import jieba
 # import logging
