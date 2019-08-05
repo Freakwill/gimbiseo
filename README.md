@@ -2,6 +2,7 @@
 🤖Man-machine conversation system base on owlready2 
 
 基于 owlready2 的问答系统。灵感来自韩剧《金秘书你为何这样》
+![](https://github.com/Freakwill/gimbiseo/blob/master/ddg5.jpg)
 
 
 # 用法
