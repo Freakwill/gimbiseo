@@ -4,6 +4,8 @@
 """
 Transform Chinese to Logic Expressions
 """
+import warnings
+warnings.filterwarnings("ignore")
 
 import types
 
@@ -13,7 +15,7 @@ import pyparsing_ext as ppx
 from actions import *
 from chinese_cut import *
 
-_dict = {'事物': 'Thing', '对称关系':'SymmetricProperty', '传递关系': 'TransitiveProperty', '自反关系':'SymmetricProperty',
+_dict = {'事物': 'Thing', '性质': 'Thing', '对称关系':'SymmetricProperty', '传递关系': 'TransitiveProperty', '自反关系':'SymmetricProperty',
  '函数关系':'FunctionalProperty', '反函数关系':'InverseFunctionalProperty', '反对称关系':'AsymmetricProperty', '非自反关系':'IrreflexiveProperty'}
 
 class ChineseMemory(Memory):
@@ -52,12 +54,12 @@ class ChineseConfig:
 
 config(SentenceAction, ChineseConfig)
 
-word = pp.Word(pp.pyparsing_unicode.Chinese.alphanums)('content')
+word = pp.Word(pp.pyparsing_unicode.Chinese.alphas)('content')
 word.addParseAction(ConceptAction)
 
-ind = pp.QuotedString('"')
+ind = pp.QuotedString('"')('content')
 ind.addParseAction(IndividualAction)
-noun = ind('content') | word('content')
+noun = ind | word
 
 SOME = pp.Literal('一些')
 ONLY = pp.Literal('只')
@@ -72,21 +74,21 @@ concept = pp.Forward()
 vp = pp.Optional('不')('negative') + pp.Optional(ONLY) + verb('relation') + noun
 vp.addParseAction(VpAction)
 
-adj = word + pp.Literal('的') | vp + pp.Suppress('的')
+adj = vp + pp.Suppress('的') | pp.Suppress('a:') + word
 # de = noun.copy()('owner') + pp.Suppress('的') + word.copy()('relation')
 # de.addParseAction(DeAction)
-np = pp.delimitedList(adj, delim=' ')('concepts') + word
+np = pp.OneOrMore(adj)('concepts') + word
 np.addParseAction(NpAction)
 # ns = pp.infixNotation(word | np,
 #             [# ('-', 1, pp.opAssoc.RIGHT),
 #             (pp.Keyword('c:和'), 2, pp.opAssoc.LEFT, AndAction),
 #             (pp.Keyword('c:或'), 2, pp.opAssoc.LEFT, OrAction),
 #             ])
-concept <<= word | np
-
+concept <<= word | np | adj
 
 definition = noun('subj') + pp.Optional('不')('negative') + pp.oneOf(['是', '是一种'])('relation') + concept('obj')
 statement = noun('subj')+ pp.Optional('不')('negative') + pp.Optional(ONLY)('quantifier') + verb('relation')  + pp.Optional(SOME)('quantifier') + concept('obj')
+
 generalQuestion = (definition.copy()|statement.copy()) + pp.Suppress('吗' + pp.Optional('？'))
 
 definition.addParseAction(DefinitionAction)
@@ -98,6 +100,7 @@ who = pp.Literal('谁')('content')
 what = pp.Literal('什么')('content')
 which = pp.Literal('哪个')('content') + noun('type')
 which_kind = pp.Literal('哪种')('content') + noun('type')
+which_kind = pp.Literal('什么样的')('content') + noun('type')
 
 def set_type(t, type_='人'):
     t.type = type_
@@ -125,7 +128,7 @@ def parse(s, cut=False):
         s = cut_flag(s)
     return sentence.parseString(s, parseAll=True)[0]
 
-x= parse('"八公" 是 v:喜欢 骨头 的 狗 吗？')
+x= parse('"八公" 是 v:喜欢 骨头 的 a:忠诚的 狗')
 print(x.toDL())
 
 # x= parse('狗是一种什么？', True)
