@@ -6,7 +6,7 @@ import jieba.posseg as pseg
 import logging
 jieba.setLogLevel(logging.INFO)
 
-keywords={'是', '是一种', '的', '吗', '？', '什么', '哪种', '谁'}
+keywords={'是':':', '是一种':'<:', '的':'的', '吗':'ma', '？':'?'}
 
 def cut(s):
     words = cut_(s)
@@ -14,10 +14,29 @@ def cut(s):
     else word_flag.word for word_flag in words)
 
 def cut_(s):
-    words = pseg.cut(s)
-    return [word for word in words if word.flag != 'x' or word.word != ' ']
+    words_ = [word for word in pseg.cut(s) if word.flag != 'x' or word.word != ' ']
+    k = 0
+    words = []
+    while k < len(words_):
+        if words_[k].word == '"':
+            nz = []
+            k+=1
+            while True:
+                nz.append(words_[k].word)
+                k += 1
+                if words_[k].word == '"':
+                    break
+            nz = f'''"{''.join(nz)}"'''
+            k += 1
+            words.append(nz)
+        words.append(words_[k])
+        k+=1
+    return words
+
 
 def convert1(w):
+    if isinstance(w, str):
+        return w
     if w.word in keywords:
         return w.word
     elif w.flag in {'uj', 'n', 'd'}:
@@ -28,6 +47,8 @@ def convert1(w):
         return f'{w.word}/{w.flag}'
 
 def convert2(w):
+    if isinstance(w, str):
+        return w
     if w.word in keywords:
         return w.word
     elif w.flag in {'uj', 'n', 'd'}:
@@ -38,8 +59,10 @@ def convert2(w):
         return f'{w.word}/{w.flag}'
 
 def convert(w):
+    if isinstance(w, str):
+        return w
     if w.word in keywords:
-        return w.word
+        return keywords[w.word]
     elif w.flag in {'uj', 'n', 'd'}:
         return w.word
     elif w.flag in {'nr', 'ns', 'nrt', 'nt', 'r', 'm'}:
@@ -50,5 +73,6 @@ def convert(w):
 
 def cut_flag(s, convert=convert):
     words = cut_(s)
-    return ' '.join(map(convert, words)).replace('是 "一种"', '是一种')
+    return ' '.join(map(convert, words)).replace('是 "一种"', '<:')
 
+print(cut_flag('"地球"是快乐的围绕"毛泽东"的星球'))

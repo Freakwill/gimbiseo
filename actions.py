@@ -219,13 +219,25 @@ class SpecialQuestionAction(SentenceAction):
             s= '%s(%s, %s)?' % (self.relation, self.subj, self.query)
         elif 'obj' in self:
             s= '%s(%s, %s)?' % (self.relation, self.query, self.obj)
-        else:
-            s= '%s(%s, %s)?' % (self.relation, self.subj, self.obj)
+            pass
 
         if 'negative' in self:
             return self.negative + s
         else:
             return s
+
+    def toDL(self):
+        if 'subj' in self:
+            if 'negative' in self:
+                if 'only' in self:
+                    return f'{self.subj}:~∀{self.relation}.{self.query.toDL()}'
+                else:
+                    return f'{self.subj}:~∃{self.relation}.{self.query.toDL()}'
+            else:    
+                if 'only' in self:
+                    return f'{self.subj}:∀{self.relation}.{self.query.toDL()}'
+                else:
+                    return f'{self.subj}:∃{self.relation}.{self.query.toDL()}'
  
     def exec(self, memory):
         if 'subj' in self:
@@ -236,52 +248,111 @@ class SpecialQuestionAction(SentenceAction):
             known = obj
         else:
             raise Exception('Provide subj or obj')
-        if self.is_instance_of():
-            if self.who_query():
-                # a for a in known.instances if isinstance(a, memory['Person'])
-                return ', '.join(k for k, a in memory if is_a(a, known) and is_instance_of(a, memory['Person']))
-            elif self.what_query():
-                if isinstance(known, IndividualAction):
-                    return ', '.join(A.name for A in proper(known.is_instance_of) if hasattr(A, 'name'))
-                else:
-                    # known.instances
-                    return ', '.join(k for k, a in memory if is_a(a, known))
-            elif self.which_query():
-                if isinstance(known, IndividualAction):
-                    return ', '.join(A.name for A in proper(known.is_instance_of) if hasattr(A, 'name'))
-                else:
-                    return ', '.join(k for k, a in memory if is_a(a, known) and  is_a(a, self.type(memory)))
+        # if self.is_instance_of():
+        #     if self.who_query():
+        #         # a for a in known.instances if isinstance(a, memory['Person'])
+        #         return ', '.join(k for k, a in memory if is_a(a, known) and is_instance_of(a, memory['Person']))
+        #     elif self.what_query():
+        #         if isinstance(known, IndividualAction):
+        #             return ', '.join(A.name for A in proper(known.is_instance_of) if hasattr(A, 'name'))
+        #         else:
+        #             # known.instances
+        #             return ', '.join(k for k, a in memory if is_a(a, known))
+        #     elif self.which_query():
+        #         if isinstance(known, IndividualAction):
+        #             return ', '.join(A.name for A in proper(known.is_instance_of) if hasattr(A, 'name'))
+        #         else:
+        #             return ', '.join(k for k, a in memory if is_a(a, known) and  is_a(a, self.type(memory)))
                     
+        # elif self.is_kind_of():
+        #     if self.what_query():
+        #         if 'subj' in self:
+        #             return ', '.join(A.name for A in proper(known.is_a) if hasattr(A, 'name'))
+        #         else:
+        #             return ', '.join(k for k, a in memory if is_a(a, known))
+        # else:
+        relation = self.relation(memory)
+        inds = [a for k, a in memory if isinstance(a, Thing)]
+        if self.who_query():
+            if 'subj' in self:
+                return ', '.join(a.name for a in getattr(known, 'INDIRECT_'+self.relation) and is_instance_of(a, memory['Person']))
+            else:
+                return ', '.join(a.name for a in inds if memory['Person'] in a.is_instance_of and known in getattr(a, 'INDIRECT_'+self.relation))
+        elif self.what_query():
+            if 'subj' in self:
+                return ', '.join(a.name for a in getattr(known, 'INDIRECT_'+self.relation))
+            else:
+                return ', '.join(a.name for a in inds if known in getattr(a, 'INDIRECT_'+self.relation))
+        else:
+            if 'subj' in self:
+                if isinstance(self.subj, IndividualAction):
+                    return ', '.join(a.name for a in getattr(known, 'INDIRECT_'+self.relation) if isinstance(a, Thing) and is_instance_of(a, self.query.type(memory)))
+                else:
+                    return ', '.join(a.name for a in inds if is_instance_of(a, self.query.type(memory)) and is_instance_of(known, relation.value(a)))
+            else:
+                if isinstance(self.obj, IndividualAction):
+                    return ', '.join(a.name for a in inds if is_instance_of(a, self.query.type(memory)) and known in getattr(a, 'INDIRECT_'+self.relation))
+                else:
+                    return ', '.join(a.name for a in inds if is_instance_of(a, self.query.type(memory)) and is_instance_of(a, relation.some(known)))
+
+
+class DefinitionQuestionAction(SpecialQuestionAction):
+
+    def toFormula(self):
+        if 'subj' in self:
+            s= f'{self.query}{self.subj}'
+        elif 'obj' in self:
+            s= f'{self.obj}{self.query}'
+            pass
+
+        if 'negative' in self:
+            return self.negative + s
+        else:
+            return s
+
+    def toDL(self):
+        if 'subj' in self:
+            if 'negative' in self:
+                return f'{self.subj}:~{self.query.toDL()}'
+            else:    
+                return f'{self.subj}:{self.query.toDL()}'
+        else:
+            if 'negative' in self:
+                return f'{self.query.toDL()}:~{self.obj}'
+            else:    
+                return f'{self.query.toDL()}:{self.obj}'
+ 
+
+    def exec(self, memory):
+        if 'subj' in self:
+            subj = self.subj(memory)
+            known = subj
+        elif 'obj' in self:
+            obj = self.obj(memory)
+            known = obj
+        else:
+            raise Exception('Provide subj or obj')
+        if self.is_instance_of():
+            if isinstance(self.query, VariableAction):
+
+                if 'type' in self.query:
+                    if isinstance(known, IndividualAction):
+                        return ', '.join(A.name for A in proper(known.is_instance_of) if hasattr(A, 'name') and self.query.type(memory) in A.is_a)
+                    else:
+                        return ', '.join(k for k, a in memory if isinstance(a, Thing) and self.query.type(memory) in a.INDIRECT_is_instance_of and is_instance_of(a, known))
+                else:
+                    if isinstance(known, IndividualAction):
+                        return ', '.join(A.name for A in proper(known.is_instance_of) if hasattr(A, 'name'))
+                    else:
+                        # known.instances
+                        return ', '.join(k for k, a in memory if is_a(a, known))
+
         elif self.is_kind_of():
             if self.what_query():
                 if 'subj' in self:
                     return ', '.join(A.name for A in proper(known.is_a) if hasattr(A, 'name'))
                 else:
                     return ', '.join(k for k, a in memory if is_a(a, known))
-        else:
-            relation = self.relation(memory)
-            inds = [a for k, a in memory if isinstance(a, Thing)]
-            if self.who_query():
-                if 'subj' in self:
-                    return ', '.join(a.name for a in getattr(known, 'INDIRECT_'+self.relation) and is_instance_of(a, memory['Person']))
-                else:
-                    return ', '.join(a.name for a in inds if memory['Person'] in a.is_instance_of and known in getattr(a, 'INDIRECT_'+self.relation))
-            elif self.what_query():
-                if 'subj' in self:
-                    return ', '.join(a.name for a in getattr(known, 'INDIRECT_'+self.relation))
-                else:
-                    return ', '.join(a.name for a in inds if known in getattr(a, 'INDIRECT_'+self.relation))
-            else:
-                if 'subj' in self:
-                    if isinstance(self.subj, IndividualAction):
-                        return ', '.join(a.name for a in getattr(known, 'INDIRECT_'+self.relation) if isinstance(a, Thing) and is_instance_of(a, self.query.type(memory)))
-                    else:
-                        return ', '.join(a.name for a in inds if is_instance_of(a, self.query.type(memory)) and is_instance_of(known, relation.value(a)))
-                else:
-                    if isinstance(self.obj, IndividualAction):
-                        return ', '.join(a.name for a in inds if is_instance_of(a, self.query.type(memory)) and known in getattr(a, 'INDIRECT_'+self.relation))
-                    else:
-                        return ', '.join(a.name for a in inds if is_instance_of(a, self.query.type(memory)) and is_instance_of(a, relation.some(known)))
 
 
 class CompoundSentenceAction(BaseAction):
@@ -437,7 +508,7 @@ class VpAction(ConceptAction):
 class NpAction(ConceptAction):
     names = ('concepts', 'content')
     def eval(self, memory):
-        return And([concept(memory) for concept in self.concepts])
+        return And([concept(memory) for concept in self.concepts] + [self.content(memory)])
 
     def __str__(self):
         return f'({self.content} & {"& ".join(str(concept) for concept in self.concepts)})'
@@ -476,13 +547,16 @@ class OrAction(CompoundConceptAction):
         return "| ".join(concept.toDL() for concept in self.concepts)
 
 class DeAction:
-    names = ('owner', 'relation')
+    names = ('owner', 'property')
     def eval(self, memory):
-        rel = self.relation(memory, bases=FunctionalProperty)
+        rel = self.property(memory, bases=FunctionalProperty)
         A = self.owner(memory)
-        name = self.owner + '的'+self.relation
+        name = self.owner + '的'+ self.property
         x = memory.new_ind(name, klass=Thing)
         return x
+
+    def __str__(self):
+        return f'{self.property}({self.owner})'
 
 
 class RelationAction(ConstantAction):
@@ -511,5 +585,13 @@ def config(Action, Config):
         setattr(Action, k, v)
 
 
-class QueryAction(VariableAction):
-    pass
+# class QueryAction(VariableAction):
+#     names = VariableAction.names + ('type',)
+#     def toDL(self):
+#         if self.content in {'谁', '哪个'}:
+#             v = 'x'
+#         else:
+#             v = 'X'
+#         if 'type' in self:
+#             v += f':{self.type}'
+#         return v
