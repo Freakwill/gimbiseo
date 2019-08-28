@@ -19,6 +19,7 @@ just run owlgimbiseo.py
 run test.py
 
 ## 结果
+（旧版，不推荐）
     -- "八公" 是 狗
     -- 狗是什么?
     -- 狗 是一种 事物
