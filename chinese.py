@@ -12,7 +12,7 @@ import pyparsing_ext as ppx
 
 from actions import *
 
-_dict = {'事物': 'Thing', '对称关系':'SymmetricProperty', '传递关系': 'TransitiveProperty', '自反关系':'SymmetricProperty',
+_dict = {'事物': 'Thing', '对称关系':'SymmetricProperty', '传递关系': 'TransitiveProperty', '自反关系':'ReflexiveProperty',
  '函数关系':'FunctionalProperty', '反函数关系':'InverseFunctionalProperty', '反对称关系':'AsymmetricProperty', '非自反关系':'IrreflexiveProperty'}
 
 class ChineseMemory(Memory):
@@ -80,9 +80,13 @@ def sentence(subj, obj, relation):
 definition = noun('subj') + pp.Optional('不')('negative') + pp.Optional(ONLY)('only') + pp.oneOf(['是', '是一种'])('relation') + noun('obj')
 definition.addParseAction(DefinitionAction)
 statement = sentence(noun('subj'), noun('obj'), pp.Optional('不')('negative') + pp.Optional(ONLY)('only') + verb('relation')  + pp.Optional(SOME)('quantifier'))
-generalQuestion = statement.copy() + pp.Suppress('吗' + pp.Optional('？'))
+generalQuestion = statement.copy() + pp.Suppress('吗' + pp.Optional('？')) 
 generalQuestion.addParseAction(GeneralQuestionAction)
 statement.addParseAction(StatementAction)
+
+# The action may change the result of parsing, you have to define the action after the parser,
+# while we only need the expression without the action,
+# you have to copy the parser if used in other expressions, before defining the action
 
 who = pp.Literal('谁')('content')
 what = pp.Literal('什么')('content')
@@ -94,10 +98,6 @@ def set_type(t, type_='人'):
     return t
 
 who.addParseAction(set_type)
-# who.addParseAction(VariableAction)
-# what.addParseAction(VariableConceptAction)
-# which.addParseAction(VariableAction)
-# which_kind.addParseAction(VariableConceptAction)
 
 query= who | what | which | which_kind
 query.addParseAction(QueryAction)
@@ -112,8 +112,3 @@ sentence = question | definition | statement
 def parse(s):
     return sentence.parseString(s, parseAll=True)[0]
 
-# import jieba
-# import logging
-# jieba.setLogLevel(logging.INFO)
-# 
-# print(parse('狗 喜欢 什么 ？'))

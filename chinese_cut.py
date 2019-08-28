@@ -75,4 +75,3 @@ def cut_flag(s, convert=convert):
     words = cut_(s)
     return ' '.join(map(convert, words)).replace('是 "一种"', '<:')
 
-print(cut_flag('"地球"是快乐的围绕"毛泽东"的星球'))

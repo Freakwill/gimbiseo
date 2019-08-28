@@ -13,6 +13,9 @@ class Memory:
     _globals = globals().copy()
     _cache = []
     _history = []
+    _inds = {}
+    _clss = {}
+    _props = {}
 
     def __getitem__(self, k):
         if k in self._locals:
@@ -60,7 +63,7 @@ class Memory:
     def re_exec(self):
         flag = True
         while flag:
-            H = copy.deepcopy(self._cache)
+            H = copy.copy(self._cache)
             for h in H:
                 try:
                     a = h(self)
@@ -87,6 +90,21 @@ class Memory:
         self[name]=x
         return x
 
+    @property
+    def inds(self):
+        return (a for k, a in self if not isinstance(a, Thing))
+
+    @property
+    def clss(self):
+        return (a for k, a in self if isinstance(a, (ThingClass, type)))
+
+    @property
+    def props(self):
+        return (a for k, a in self if isinstance(a, ObjectPropertyClass))
+
+    
+
+
 commands = {'print': print}
 
 class Command(object):
@@ -109,21 +127,72 @@ class Command(object):
 
 from owlready2 import *
 
-def is_instance_of(i, c):
-    # i: Thing
+def is_instance_of(i, c, exclude=set()):
+    # i: Thing, c: Concept/Class
+    if i.INDIRECT_is_instance_of and c in i.INDIRECT_is_instance_of:
+        return True
     if isinstance(c, And):
-        return all(is_instance_of(i, cc) for cc in c.Classes)
-    return c in i.is_instance_of or any(is_a(y, c) for y in i.INDIRECT_is_instance_of if hasattr(y, 'is_a'))
+        return all(is_instance_of(i, cc, exclude) for cc in c.Classes)
+    elif isinstance(c, Or):
+        return any(is_instance_of(i, cc, exclude) for cc in c.Classes)
+    elif isinstance(c, Not):
+        return not is_instance_of(i, c, exclude)
+    elif isinstance(c, OneOf):
+        return all(i == x for x in c.instances)
+    elif isinstance(c, Restriction):
+        i_r = getattr(i, c.property.name)
+        if i_r:
+            if c.type == 24:
+                return is_a(c.value, getattr(i, c.property.name))
+            if c.type == 25:
+                return is_a(getattr(i, c.property.name), c.value)
+            elif c.type == 29:
+                return c.value == i_r[0]
+        else:
+            return False
+    else:
+        if i.INDIRECT_is_instance_of:
+            if c in i.INDIRECT_is_instance_of:
+                return True
+            else:
+                # for y in i.INDIRECT_is_instance_of:
+                #     if y not in exclude:
+                #         if is_a(y, c, exclude):
+                #             return True
+                #         else:
+                #             exclude.add(y)
+                # else:
+                return False
+        else:
+            return False
 
-def is_a(x, c):
+
+def is_a(x, c, exclude=set()):
+    if x == c:
+        return True
+    if x.INDIRECT_is_a and c in x.INDIRECT_is_a:
+        return True
     if isinstance(c, And):
-        return all(is_a(i, cc) for cc in c.Classes)
-    return c in x.is_a or any(is_a(y, c) for y in x.is_a if hasattr(y, 'is_a'))
+        return all(is_a(x, cc) for cc in c.Classes)
+    if isinstance(x, Or):
+        return all(is_a(cc, c) for cc in x.Classes)
+    elif isinstance(x, OneOf):
+        return all(is_instance_of(xi, c) for xi in x.instances)
+    else:
+        # for y in x.is_a:
+        #     if hasattr(y, 'is_a') and y not in exclude:
+        #         if is_a(y, c, exclude):
+        #             return True
+        #         else:
+        #             exclude = exclude.add(y)
+        # else:
+        return False
 
 def proper(As):
+    As = list(As)
     for k, A in enumerate(As):
         A = As.pop(0)
-        if not any(is_a(B, A) or B==A for B in As if hasattr(B,'is_a')):
+        if not any(is_a(B, A) or B==A for B in As if hasattr(B,'is_a') and hasattr(B, 'INDIRECT_is_a')):
             As.append(A)
     return As
 

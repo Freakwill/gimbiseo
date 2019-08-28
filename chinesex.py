@@ -19,7 +19,9 @@ from chinese_cut import *
 class ChineseMemory(Memory):
     _template = {'whatis': '%s是什么?', 'yes': '是', 'no': '不是', 'get': '我知道了',
      'unknown': '我不知道', 'think': '让我想一想', 'excuse':'能再说一遍吗？',
-     'inconsistent': '与已知的不一致'}
+     'inconsistent': '与已知的不一致',
+     'uninterpreted':'疑问词"%s"没有被解释'
+     }
     _dict = {'事物': 'Thing', '性质': 'Thing', '对称关系':'SymmetricProperty', '传递关系': 'TransitiveProperty', '自反关系':'SymmetricProperty',
  '函数关系':'FunctionalProperty', '反函数关系':'InverseFunctionalProperty', '反对称关系':'AsymmetricProperty', '非自反关系':'IrreflexiveProperty'}
     _globals = globals().copy()
@@ -95,7 +97,7 @@ generalQuestion.addParseAction(GeneralQuestionAction)
 who = pp.Literal('谁')('content')
 what = pp.Literal('什么')('content')
 which = pp.Literal('哪个')('content') + noun('type')
-which_kind = (pp.Literal('哪种')('content') | pp.Literal('什么样的')('content')) + noun('type')
+which_kind = (pp.Literal('哪种')('content') | pp.Literal('什么样的')('content') | pp.Literal('什么')('content')) + noun('type')
 
 def set_type(l,s,t, type_='人'):
     t.type = type_
@@ -107,18 +109,18 @@ who.addParseAction(set_type)
 # which.addParseAction(VariableAction)
 # which_kind.addParseAction(VariableConceptAction)
 
-query1 = who | what | which
-query2 = which_kind
+query1 = who | which
+query2 = which_kind | what
 query1.addParseAction(VariableAction)
 query2.addParseAction(VariableConceptAction)
-query = query1('query') | query2('query')
+query = query1 | query2
 
-specialQuestion = (query + pp.Optional('不')('negative') + verb('relation') |
-noun('subj') + pp.Optional('不')('negative') + verb('relation') + query('query')) + pp.Suppress('？')
+specialQuestion = (query('subj').addParseAction(lambda l,s,t:t[0]) + pp.Optional('不')('negative') + verb('relation') + noun('obj') |
+noun('subj') + pp.Optional('不')('negative') + verb('relation') + query('obj').addParseAction(lambda l,s,t:t[0])) + pp.Suppress('？')
 specialQuestion.addParseAction(SpecialQuestionAction)
 
-definitionQuestion = (query + pp.Optional('不')('negative') + is_ + concept('obj')|
-concept('subj') + pp.Optional('不')('negative') + is_ + query) + pp.Suppress('？')
+definitionQuestion = (query('subj').addParseAction(lambda l,s,t:t[0]) + pp.Optional('不')('negative') + is_ + concept('obj')|
+concept('subj') + pp.Optional('不')('negative') + is_ + query('obj').addParseAction(lambda l,s,t:t[0])) + pp.Suppress('？')
 definitionQuestion.addParseAction(DefinitionQuestionAction)
 
 question = definitionQuestion | specialQuestion | generalQuestion
@@ -129,7 +131,7 @@ def parse(s, cut=False):
         s = cut_flag(s)
     return sentence.parseString(s, parseAll=True)[0]
 
-# x = generalQuestion.parseString('"太阳" 是 a:红色的 天体 吗？')[0]
+# x = parse('"地球" 是 a:蓝色的 天体')
 # print(x)
 
 
