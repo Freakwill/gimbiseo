@@ -6,7 +6,7 @@ import pathlib
 from utils import *
 from chinese_cut import *
 from actions import *
-from chinesex import *
+from chinese import *
 from owlready2 import *
 
 from error import *
@@ -17,7 +17,7 @@ onto_path.append(PATH)
 gimbiseo = get_ontology("http://test.org/gimbiseo.owl")
 gimbiseo.metadata.comment.append("Human-Machine Dialogue System")
 
-def print_(something, prompt='--',*args, **kwargs):
+def print_(something, prompt='--', *args, **kwargs):
     print(prompt, something, *args, **kwargs)
 
 def answer(q, memory):
@@ -33,6 +33,7 @@ memory = ChineseMemory()
 
 def main(memory):
     with gimbiseo:
+        
         while True:
             q = input('-- ')
             # q = cut_flag(q)
@@ -53,7 +54,6 @@ def main(memory):
                 continue
             if isinstance(p, StatementAction):
                 if q in memory.history:
-                    assert a == '' or memory.no_repeat == a, AnswerError(memory.no_repeat, a)
                     print_(memory.no_repeat)
                     continue
                 else:
@@ -61,7 +61,6 @@ def main(memory):
                     try:
                         ans = p(memory)
                         if ans:
-                            assert a == '' or memory.get == a, AnswerError(memory.get, a)
                             print_(memory.get)
                             memory.re_exec()
                     except NameError as e:
@@ -72,17 +71,14 @@ def main(memory):
             elif isinstance(p, SpecialQuestionAction):
                 ans = answer(p, memory)
                 if ans:
-                    assert a == '' or ans == a, AnswerError(ans, a)
                     print(ans)
                 else:
                     print(memory.unknown)
             elif isinstance(p, GeneralQuestionAction):
                 ans = answer(p, memory)
                 if ans:
-                    assert a == '' or memory.yes == a, AnswerError(memory.yes, a)
                     print(memory.yes)
                 else:
-                    assert a == '' or memory.no == a, AnswerError(memory.no, a)
                     print(memory.no)
             else:
                 print_(memory.excuse)
