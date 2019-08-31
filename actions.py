@@ -132,25 +132,34 @@ class DefinitionAction(StatementAction):
         if self.is_instance_of():
             if subj:
                 if 'negative' in self:
-                    if obj in subj.is_instance_of:
+                    if obj in subj.INDIRECT_is_instance_of:
                         print(memory.inconsistent)
                     else:
                         subj.is_instance_of.append(Not(obj))
                 else:
-                    if Not(obj) in subj.is_instance_of:
+                    if Not(obj) in subj.INDIRECT_is_instance_of:
                         print(memory.inconsistent)
                     else:
                         subj.is_instance_of.append(obj)
             else:
-                self.subj.create(memory, obj)
+                self.subj.new(memory, (obj.main,))
         elif self.is_kind_of():
             if self.subj.content in memory:
                 if 'negative' in self:
-                    subj.is_a.append(Not(obj))
+                    if obj in subj.INDIRECT_is_a:
+                        print(memory.inconsistent)
+                    else:
+                        subj.is_a.append(Not(obj))
                 else:
-                    subj.is_a.append(obj)
+                    if Not(obj) in subj.INDIRECT_is_a:
+                        print(memory.inconsistent)
+                    else:
+                        subj.is_a.append(obj)
             else:
-                self.subj.create(memory, obj)
+                self.subj.create(memory, (obj.main,))
+
+        elif self.is_defined_as():
+            self.subj.create(memory, (obj.main,), {'equivalent_to':[obj]})
         return True
 
     def toDL(self):
@@ -180,14 +189,14 @@ class GeneralQuestionAction(SentenceAction):
         obj = self.obj(memory, locals)
         if self.is_instance_of():
             if isinstance(self.obj, ConceptAction):
-                ans = isinstance(subj, obj) if isinstance(obj, type) else is_instance_of(subj, obj)
+                ans = is_instance_of(subj, obj)
+            else:
+                ans = is_instance_of(obj, subj)
+        elif self.is_kind_of():
+            if isinstance(self.subj, ConceptAction):
+                ans = is_a(subj, obj)
             else:
                 ans = is_instance_of(subj, obj)
-        elif self.is_kind_of():
-            if isinstance(self.obj, ConceptAction):
-                ans = issubclass(subj, obj) if isinstance(obj, type) else is_instance_of(subj, obj)
-            else:
-                ans = is_a(subj, obj)
         else:
             if isinstance(self.obj, IndividualAction):
                 ans = obj in getattr(subj, self.relation.content) or obj in getattr(subj, 'INDIRECT_'+self.relation)
@@ -279,7 +288,14 @@ class DefinitionQuestionAction(SpecialQuestionAction):
             raise Exception('Provide subj or obj')
 
         if isinstance(query, VariableConceptAction):
-            if isinstance(known, ThingClass):
+            if isinstance(known, Thing):
+                if 'type' in query:
+                    Cs = set(known.INDIRECT_is_a) - {query.type(memory, locals)}
+                    return ', '.join(X.name for X in proper(Cs) if hasattr(X, 'name') and not is_a(query.type(memory, locals), X))
+                else:
+                    Cs = set(known.INDIRECT_is_a) 
+                    return ', '.join(X.name for X in proper(Cs) if hasattr(X, 'name'))
+            else:
                 if flag == 1:
                     if 'type' in query:
                         Cs = set(known.INDIRECT_is_a) - {query.type(memory, locals), known}
@@ -292,13 +308,6 @@ class DefinitionQuestionAction(SpecialQuestionAction):
                         return ', '.join(X.name for X in memory.clss if is_a(X, known) and X != known and not is_a(query.type(memory, locals), X))
                     else:
                         return ', '.join(X.name for X in memory.clss if is_a(X, known) and X != known)
-            else:
-                if 'type' in query:
-                    Cs = set(known.INDIRECT_is_instance_of) - {query.type(memory, locals)}
-                    return ', '.join(X.name for X in proper(Cs) if hasattr(X, 'name') and not is_a(query.type(memory, locals), X))
-                else:
-                    Cs = set(known.INDIRECT_is_instance_of) 
-                    return ', '.join(X.name for X in proper(Cs) if hasattr(X, 'name'))
         else:
             if 'type' in query:
                 return ', '.join(x.name for x in memory.inds if is_instance_of(x, query.type(memory, locals)) and is_instance_of(x, known))
@@ -343,7 +352,7 @@ class AtomAction(BaseAction):
             if check:
                 raise NameError(memory.whatis % self.content)
             else:
-                return self.create(memory, Thing)
+                return self.create(memory)
 
     def update(self, memory, x):
         return memory.update({self.content:x})
@@ -406,10 +415,13 @@ class ConstantAction(AtomAction):
     pass
 
 class IndividualAction(ConstantAction):
-    def create(self, memory, klass):
+    def new(self, memory, klass=Thing):
         ind = klass(self.content)
         memory.update({self.content: ind})
         return ind
+
+    def create(self, *args, **kwargs):
+        return self.new(*args, **kwargs)
 
     def toConcept(self):
         return OneOf({self(memory)})
@@ -445,10 +457,15 @@ class VariableConceptAction(VariableAction):
 
 class ConceptAction(ConstantAction):
 
-    def create(self, memory, *bases):
-        rel = types.new_class(self.content, bases=bases)
-        memory.update({self.content: rel})
+    def create(self, memory, bases=(Thing,), kwds=None):
+        name = memory._dict.get(self.content, self.content)
+        rel = types.new_class(name, bases, kwds)
+        memory.update({name: rel})
         return rel
+
+    @property
+    def main():
+        return self.content(memory)
 
 
 class VpAction(ConceptAction):
@@ -557,7 +574,7 @@ class DeAction:
     def eval(self, memory, locals={}):
         rel = self.property(memory, locals, bases=FunctionalProperty)
         A = self.owner(memory, locals)
-        name = self.owner + '的'+ self.property
+        name = self.owner + '_'+ self.property
         x = memory.new_ind(name, klass=Thing)
         return x
 
@@ -573,10 +590,10 @@ class RelationAction(ConstantAction):
             if check:
                 raise NameError(memory.whatis % self.content)
             else:
-                return self.create(memory, ObjectProperty)
+                return self.create(memory)
 
-    def create(self, memory, *bases):
-        rel = types.new_class(self.content, bases=bases)
+    def create(self, memory, bases=(ObjectProperty,), kwds=None):
+        rel = types.new_class(self.content, bases, kwds)
         memory.update({self.content: rel})
         return rel
 

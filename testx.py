@@ -31,8 +31,9 @@ def answer(q, memory):
 
 memory = ChineseMemory()
 
+from qadict import *
 def main(memory):
-    from qadict import test1, test2, test3, test4
+    
     q_as = test2
     with gimbiseo:
         for q, a in q_as.items():

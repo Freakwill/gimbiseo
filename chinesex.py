@@ -19,10 +19,9 @@ from chinese_cut import *
 class ChineseMemory(Memory):
     _template = {'whatis': '%s是什么?', 'yes': '是', 'no': '不是', 'get': '我知道了',
      'unknown': '我不知道', 'think': '让我想一想', 'excuse':'能再说一遍吗？',
-     'inconsistent': '与已知的不一致',
-     'uninterpreted':'疑问词"%s"没有被解释'
+     'inconsistent': '与已知的不一致', 'uninterpreted':'疑问词"%s"没有被解释'
      }
-    _dict = {'事物': 'Thing', '性质': 'Thing', '对称关系':'SymmetricProperty', '传递关系': 'TransitiveProperty', '自反关系':'SymmetricProperty',
+    _dict = {'事物': 'Thing', '性质': 'Thing', '人':'Person', '对称关系':'SymmetricProperty', '传递关系': 'TransitiveProperty', '自反关系':'SymmetricProperty',
  '函数关系':'FunctionalProperty', '反函数关系':'InverseFunctionalProperty', '反对称关系':'AsymmetricProperty', '非自反关系':'IrreflexiveProperty'}
     _globals = globals().copy()
 
@@ -36,6 +35,9 @@ class ChineseConfig:
 
     def is_kind_of(self):
         return self.relation == '是一种'
+
+    def is_defined_as(self):
+        return self.relation == '定义为'
 
     def what_query(self):
         return self.query == '什么'
@@ -61,8 +63,10 @@ ind = pp.QuotedString('"')('content')
 ind.addParseAction(IndividualAction)
 noun = ind | word
 
-SOME = pp.Literal('一些')
+SOME = pp.Literal('某些')
 ONLY = pp.Literal('只')
+ATLEAST = pp.Literal('至少')
+ATMOST = pp.Literal('至多')
 
 Quantifier = SOME | ONLY
 Quantifier.addParseAction(QuantifierAction)
@@ -71,7 +75,7 @@ verb = pp.Suppress('v:') + pp.Word(pp.pyparsing_unicode.Chinese.alphas)('content
 verb.addParseAction(RelationAction)
 
 concept = pp.Forward()
-vp = pp.Optional('不')('negative') + pp.Optional(ONLY) + verb('relation') + noun
+vp = pp.Optional('不')('negative') + pp.Optional(Quantifier)('quantifier') + verb('relation') + noun
 vp.addParseAction(VpAction)
 
 adj = vp + pp.Suppress('的') | pp.Suppress('a:') + word
@@ -81,12 +85,13 @@ np.addParseAction(NpAction)
 
 # de = noun('owner') + pp.Keyword('的') + word('property')
 # de.addParseAction(DeAction)
-is_ =  pp.Optional('也')+ pp.oneOf(['是', '是一种'])('relation')
+is_ =  pp.Optional('也')+ pp.oneOf(['是', '是一种', '定义为'])('relation')
 
 concept <<= noun | np | adj
 
 definition = noun('subj') + pp.Optional('不')('negative') + is_ + concept('obj')
-statement = noun('subj')+ pp.Optional('不')('negative') + pp.Optional(ONLY)('quantifier') + verb('relation')  + pp.Optional(SOME)('quantifier') + concept('obj')
+statement = noun('subj')+ pp.Optional('不')('negative') + pp.Optional(Quantifier)('quantifier') + verb('relation') + pp.Optional(SOME)('quantifier') + concept('obj')
+#statementq = noun('subj')+ pp.Optional('不')('negative') + Quantifier('quantifier') + verb('relation') + pp.pyparsing_common.integer('number') + concept('obj')
 
 generalQuestion = (definition.copy()|statement.copy()) + pp.Suppress('吗' + pp.Optional('？'))
 
@@ -131,7 +136,5 @@ def parse(s, cut=False):
         s = cut_flag(s)
     return sentence.parseString(s, parseAll=True)[0]
 
-# x = parse('"地球" 是 a:蓝色的 天体')
+# x = parse('"月球" 是 v:围绕 "地球" 的 卫星 吗？')
 # print(x)
-
-

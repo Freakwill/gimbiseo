@@ -31,7 +31,10 @@ class Memory:
         self._locals[k] = v
 
     def __contains__(self, k):
-        return k in self._dict or k in self._globals or k in self._locals
+        if k not in self._dict:
+            return k in self._globals or k in self._locals
+        else:
+            return self._dict[k] in self._globals or self._dict[k] in self._locals
 
     def update(self, *args, **kwargs):
         self._locals.update(*args, **kwargs)
@@ -92,15 +95,15 @@ class Memory:
 
     @property
     def inds(self):
-        return (a for k, a in self if not isinstance(a, Thing))
+        return set(a for k, a in self if isinstance(a, Thing))
 
     @property
     def clss(self):
-        return (a for k, a in self if isinstance(a, (ThingClass, type)))
+        return set(a for k, a in self if isinstance(a, ThingClass))
 
     @property
     def props(self):
-        return (a for k, a in self if isinstance(a, ObjectPropertyClass))
+        return set(a for k, a in self if isinstance(a, ObjectPropertyClass))
 
     
 
