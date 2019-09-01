@@ -44,7 +44,7 @@ class BaseAction:
 
 
 class SentenceAction(BaseAction):
-    names = ('subj', 'obj', 'relation', 'negative')
+    names = ('subj', 'obj', 'relation', 'negative', 'quantifier', 'number')
 
     def __str__(self):
         return self.toFormula()
@@ -84,13 +84,15 @@ class SentenceAction(BaseAction):
                 return f'{self.subj}:∃{self.relation}.{{{self.obj}}}'
         else:
             if 'negative' in self:
-                if 'only' in self:
+                if self.only():
                     return f'{self.subj}:~∀{self.relation}.{self.obj}'
                 else:
                     return f'{self.subj}:~∃{self.relation}.{self.obj}'
             else:    
-                if 'only' in self:
+                if self.only():
                     return f'{self.subj}:∀{self.relation}.{self.obj}'
+                elif self.exactly():
+                    return f'{self.subj}:={self.number}.{self.obj}'
                 else:
                     return f'{self.subj}:∃{self.relation}.{self.obj}'
 
@@ -106,19 +108,20 @@ class StatementAction(SentenceAction):
             if 'negative' in self:
                 subj.is_a.append(Not(relation.value(obj)))
             else:
-                if isinstance(self.subj, IndividualAction):
-                    getattr(subj, self.relation.content).append(obj)
-                else:
-                    subj.is_a.append(relation.value(obj))
+                getattr(subj, self.relation.content).append(obj)
         else:
             if 'negative' in self:
-                if 'only' in self:
+                if self.only():
                     subj.is_a.append(relation.some(Not(obj)))
+                elif self.exactly():
+                    subj.is_a.append(Not(relation.exactly(obj, int(self.number))))
                 else:
                     subj.is_a.append(relation.only(Not(obj)))
             else:    
-                if 'only' in self:
+                if self.only():
                     subj.is_a.append(relation.only(obj))
+                elif self.exactly():
+                    subj.is_a.append(relation.exactly(obj, int(self.number)))
                 else:
                     subj.is_a.append(relation.some(obj))
         return True
@@ -200,12 +203,23 @@ class GeneralQuestionAction(SentenceAction):
         else:
             if isinstance(self.obj, IndividualAction):
                 ans = obj in getattr(subj, self.relation.content) or obj in getattr(subj, 'INDIRECT_'+self.relation)
+                # if not ans and not isinstance(c, Restriction) c in subj.INDIRECT_is_instance_of:
+                #     print('无法证实')
             else:
-                c = self.relation(memory).some(obj)
+                if self.only():
+                    c = self.relation(memory).only(obj)
+                elif self.exactly():
+                    c = self.relation(memory).exactly(obj, int(self.number))
+                else:
+                    c = self.relation(memory).some(obj)
                 if isinstance(self.subj, IndividualAction):
                     ans = is_instance_of(subj, c)
+                    # if not ans and Not(c) not in subj.INDIRECT_is_instance_of:
+                    #     print('无法证实')
                 else:
                     ans = is_a(subj, c)
+                    # if not ans and Not(c) not in subj.INDIRECT_is_a:
+                    #     print('无法证实')
         if 'negative' in self:
             return not ans
         else:
@@ -250,15 +264,15 @@ class SpecialQuestionAction(GeneralQuestionAction):
         if isinstance(query, VariableConceptAction):
             if flag == 1:
                 if 'type' in query:
-                    return ', '.join(X.name for X in getattr(known, 'INDIRECT_'+self.relation) if isinstance(X, ThingClass) and not is_a(query.type(memory, locals), X))
+                    return ', '.join(pretty(X) for X in getattr(known, 'INDIRECT_'+self.relation) if isinstance(X, ThingClass) and not is_a(query.type(memory, locals), X))
                 else:
-                    return ', '.join(X.name for X in getattr(known, 'INDIRECT_'+self.relation) if isinstance(X, ThingClass))
+                    return ', '.join(pretty(X) for X in getattr(known, 'INDIRECT_'+self.relation) if isinstance(X, ThingClass))
             else:
                 clss = memory.clss
                 if 'type' in query:
-                    return ', '.join(X.name for X in clss if is_a(X, query.type(memory, locals)) and not is_a(query.type(memory, locals), X) and known in getattr(X, 'INDIRECT_'+self.relation))
+                    return ', '.join(pretty(X) for X in clss if is_a(X, query.type(memory, locals)) and not is_a(query.type(memory, locals), X) and known in getattr(X, 'INDIRECT_'+self.relation))
                 else:
-                    return ', '.join(X.name for X in clss if isinstance(X, ThingClass) and known in getattr(X, 'INDIRECT_'+self.relation))
+                    return ', '.join(pretty(X) for X in clss if isinstance(X, ThingClass) and known in getattr(X, 'INDIRECT_'+self.relation))
         else:
             if flag == 1:
                 if 'type' in query:
@@ -268,7 +282,7 @@ class SpecialQuestionAction(GeneralQuestionAction):
             else:
                 inds = memory.inds
                 if 'type' in query:
-                    return ', '.join(x.name for x in inds if is_instance_of(x, query.type(memory, locals)) and known in getattr(a, 'INDIRECT_'+self.relation))
+                    return ', '.join(x.name for x in inds if is_instance_of(x, query.type(memory, locals)) and known in getattr(x, 'INDIRECT_'+self.relation))
                 else:
                     return ', '.join(x.name for x in inds if known in getattr(a, 'INDIRECT_'+self.relation))
         
@@ -291,23 +305,23 @@ class DefinitionQuestionAction(SpecialQuestionAction):
             if isinstance(known, Thing):
                 if 'type' in query:
                     Cs = set(known.INDIRECT_is_a) - {query.type(memory, locals)}
-                    return ', '.join(X.name for X in proper(Cs) if hasattr(X, 'name') and not is_a(query.type(memory, locals), X))
+                    return ', '.join(pretty(X) for X in proper(Cs) and not is_a(query.type(memory, locals), X))
                 else:
                     Cs = set(known.INDIRECT_is_a) 
-                    return ', '.join(X.name for X in proper(Cs) if hasattr(X, 'name'))
+                    return ', '.join(pretty(X) for X in proper(Cs))
             else:
                 if flag == 1:
                     if 'type' in query:
                         Cs = set(known.INDIRECT_is_a) - {query.type(memory, locals), known}
-                        return ', '.join(X.name for X in proper(Cs) if hasattr(X, 'name') and not is_a(query.type(memory, locals), X))
+                        return ', '.join(pretty(X) for X in proper(Cs) if not is_a(query.type(memory, locals), X))
                     else:
                         Cs = set(known.INDIRECT_is_a) - {known}   
-                        return ', '.join(X.name for X in proper(Cs) if hasattr(X, 'name'))
+                        return ', '.join(pretty(X) for X in proper(Cs))
                 else:
                     if 'type' in query:
-                        return ', '.join(X.name for X in memory.clss if is_a(X, known) and X != known and not is_a(query.type(memory, locals), X))
+                        return ', '.join(pretty(X) for X in memory.clss if is_a(X, known) and X != known and not is_a(query.type(memory, locals), X))
                     else:
-                        return ', '.join(X.name for X in memory.clss if is_a(X, known) and X != known)
+                        return ', '.join(pretty(X) for X in memory.clss if is_a(X, known) and X != known)
         else:
             if 'type' in query:
                 return ', '.join(x.name for x in memory.inds if is_instance_of(x, query.type(memory, locals)) and is_instance_of(x, known))
@@ -469,29 +483,29 @@ class ConceptAction(ConstantAction):
 
 
 class VpAction(ConceptAction):
-    names = ('content', 'relation')
+    names = ('content', 'relation', 'quantifier')
     def eval(self, memory, locals={}):
         rel = self.relation(memory, locals)
         A = self.content(memory, locals)
         if isinstance(self.content, IndividualAction):
             if 'negative' in self:
-                if 'only' in self:
+                if self.only():
                     return rel.some(Not(OneOf({A})))
                 else:
                     return rel.only(Not(OneOf({A})))
             else:
-                if 'only' in self:
+                if self.only():
                     return rel.only(OneOf({A}))
                 else:
                     return rel.value(A)
         else:
             if 'negative' in self:
-                if 'only' in self:
+                if self.only():
                     return rel.some(Not(A))
                 else:
                     return rel.only(Not(A))
             else:
-                if 'only' in self:
+                if self.only():
                     return rel.only(A)
                 else:
                     return rel.some(A)
@@ -500,7 +514,7 @@ class VpAction(ConceptAction):
     #     return self.eval(memory, locals={})
 
     def toFormula(self):
-        if 'only' in self:
+        if self.only():
             return '%s*(?, %s)' % (self.relation, self.content)
         else:
             return '%s(?, %s)' % (self.relation, self.content)
@@ -508,23 +522,23 @@ class VpAction(ConceptAction):
     def toDL(self):
         if isinstance(self.content, IndividualAction):
             if 'negative' in self:
-                if 'only' in self:
+                if self.only():
                     return f'∃{self.relation}.~{{{self.content}}}'
                 else:
                     return f'∀{self.relation}.~{{{self.content}}}'
             else:
-                if 'only' in self:
+                if self.only():
                     return f'∀{self.relation}.{{{self.content}}}'
                 else:
                     return f'∃{self.relation}.{{{self.content}}}'
         else:
             if 'negative' in self:
-                if 'only' in self:
+                if self.only():
                     return f'∃{self.relation}.~{self.content}'
                 else:
                     return f'∀{self.relation}.~{self.content}'
             else:
-                if 'only' in self:
+                if self.only():
                     return f'∀{self.relation}.{self.content}'
                 else:
                     return f'∃{self.relation}.{self.content}'
@@ -532,7 +546,10 @@ class VpAction(ConceptAction):
 class NpAction(ConceptAction):
     names = ('concepts', 'content')
     def eval(self, memory, locals={}):
-        return And([concept(memory, locals) for concept in self.concepts] + [self.content(memory)])
+        if self.content == 'Thing':
+            return And([concept(memory, locals) for concept in self.concepts if concept != 'Thing'])
+        else:
+            return And([concept(memory, locals) for concept in self.concepts if concept != 'Thing'] + [self.content(memory)])
 
     def toFormula(self):
         return f'({self.content} & {"& ".join(str(concept) for concept in self.concepts)})'
@@ -549,7 +566,7 @@ class CompoundConceptAction(ConceptAction):
 class AndAction(CompoundConceptAction):
 
     def eval(self, memory, locals={}):
-        return And([concept(memory, locals) for concept in self.concepts])
+        return And([concept(memory, locals) for concept in self.concepts if concept != 'Thing'])
 
     def toFormula(self):
         return "& ".join(str(concept) for concept in self.concepts)

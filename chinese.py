@@ -54,7 +54,17 @@ class ChineseConfig:
     def which_kind_query(self):
         return self.query == '哪种'
 
+    def only(self):
+        return 'quantifier' in self and self.quantifier[0] == '只'
+
+    def exactly(self):
+        return 'quantifier' in self and self.quantifier[0] == '只' and 'number' in self
+
 config(SentenceAction, ChineseConfig)
+config(VpAction, ChineseConfig)
+
+
+unpack = lambda l,s,t:t[0]
 
 word = pp.Word(pp.pyparsing_unicode.Chinese.alphas)('content')
 word.addParseAction(ConceptAction)
@@ -68,14 +78,15 @@ ONLY = pp.Literal('只')
 ATLEAST = pp.Literal('至少')
 ATMOST = pp.Literal('至多')
 
-Quantifier = SOME | ONLY
+Quantifier = pp.Optional('q:').suppress() + (SOME | ONLY | ATLEAST | ATMOST)('content')
 Quantifier.addParseAction(QuantifierAction)
 
 verb = pp.Suppress('v:') + pp.Word(pp.pyparsing_unicode.Chinese.alphas)('content')
 verb.addParseAction(RelationAction)
 
 concept = pp.Forward()
-vp = pp.Optional('不')('negative') + pp.Optional(Quantifier)('quantifier') + verb('relation') + noun
+qverb = pp.Optional(Quantifier)('quantifier') + verb('relation') + pp.Optional(SOME)('quantifier')
+vp = pp.Optional('不')('negative') + qverb + noun
 vp.addParseAction(VpAction)
 
 adj = vp + pp.Suppress('的') | pp.Suppress('a:') + word
@@ -90,7 +101,7 @@ is_ =  pp.Optional('也')+ pp.oneOf(['是', '是一种', '定义为'])('relation
 concept <<= noun | np | adj
 
 definition = noun('subj') + pp.Optional('不')('negative') + is_ + concept('obj')
-statement = noun('subj')+ pp.Optional('不')('negative') + pp.Optional(Quantifier)('quantifier') + verb('relation') + pp.Optional(SOME)('quantifier') + concept('obj')
+statement = noun('subj')+ pp.Optional('不')('negative') +  (Quantifier('quantifier') + verb('relation') + pp.pyparsing_common.integer('number') | qverb) + concept('obj')
 #statementq = noun('subj')+ pp.Optional('不')('negative') + Quantifier('quantifier') + verb('relation') + pp.pyparsing_common.integer('number') + concept('obj')
 
 generalQuestion = (definition.copy()|statement.copy()) + pp.Suppress('吗' + pp.Optional('？'))
@@ -120,12 +131,12 @@ query1.addParseAction(VariableAction)
 query2.addParseAction(VariableConceptAction)
 query = query1 | query2
 
-specialQuestion = (query('subj').addParseAction(lambda l,s,t:t[0]) + pp.Optional('不')('negative') + verb('relation') + noun('obj') |
-noun('subj') + pp.Optional('不')('negative') + verb('relation') + query('obj').addParseAction(lambda l,s,t:t[0])) + pp.Suppress('？')
+specialQuestion = (query('subj').addParseAction(unpack) + pp.Optional('不')('negative') + verb('relation') + noun('obj') |
+noun('subj') + pp.Optional('不')('negative') + verb('relation') + query('obj').addParseAction(unpack)) + pp.Suppress('？')
 specialQuestion.addParseAction(SpecialQuestionAction)
 
-definitionQuestion = (query('subj').addParseAction(lambda l,s,t:t[0]) + pp.Optional('不')('negative') + is_ + concept('obj')|
-concept('subj') + pp.Optional('不')('negative') + is_ + query('obj').addParseAction(lambda l,s,t:t[0])) + pp.Suppress('？')
+definitionQuestion = (query('subj').addParseAction(unpack) + pp.Optional('不')('negative') + is_ + concept('obj') |
+concept('subj') + pp.Optional('不')('negative') + is_ + query('obj').addParseAction(unpack)) + pp.Suppress('？')
 definitionQuestion.addParseAction(DefinitionQuestionAction)
 
 question = definitionQuestion | specialQuestion | generalQuestion
@@ -136,5 +147,5 @@ def parse(s, cut=False):
         s = cut_flag(s)
     return sentence.parseString(s, parseAll=True)[0]
 
-# x = parse('"月球" 是 v:围绕 "地球" 的 卫星 吗？')
+# x = parse('肉食的 是一种 q:只 v:吃 动物 的 生物')
 # print(x)

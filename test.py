@@ -32,9 +32,10 @@ def answer(q, memory):
 memory = ChineseMemory()
 
 from qadict import *
+
 def main(memory):
     
-    q_as = test2
+    q_as = test6
     with gimbiseo:
         for q, a in q_as.items():
             # sh.say(q)

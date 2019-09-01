@@ -146,9 +146,9 @@ def is_instance_of(i, c, exclude=set()):
         i_r = getattr(i, c.property.name)
         if i_r:
             if c.type == 24:
-                return is_a(c.value, getattr(i, c.property.name))
+                return is_a(c.value, i_r)
             if c.type == 25:
-                return is_a(getattr(i, c.property.name), c.value)
+                return is_a(i_r, c.value)
             elif c.type == 29:
                 return c.value == i_r[0]
         else:
@@ -173,10 +173,14 @@ def is_instance_of(i, c, exclude=set()):
 def is_a(x, c, exclude=set()):
     if x == c:
         return True
-    if x.INDIRECT_is_a and c in x.INDIRECT_is_a:
+    if x.is_a and c in x.is_a:
+        return True
+    elif x.INDIRECT_is_a and c in x.INDIRECT_is_a:
         return True
     if isinstance(c, And):
         return all(is_a(x, cc) for cc in c.Classes)
+    elif isinstance(c, (IndividualValueList, list)):
+        return x in c
     if isinstance(x, Or):
         return all(is_a(cc, c) for cc in x.Classes)
     elif isinstance(x, OneOf):
@@ -193,9 +197,16 @@ def is_a(x, c, exclude=set()):
 
 def proper(As):
     As = list(As)
-    for k, A in enumerate(As):
+    for _ in range(len(As)):
         A = As.pop(0)
-        if not any(is_a(B, A) or B==A for B in As if hasattr(B,'is_a') and hasattr(B, 'INDIRECT_is_a')):
+        if not any(is_a(B, A) for B in As if hasattr(B,'is_a') and hasattr(B, 'INDIRECT_is_a')):
             As.append(A)
     return As
+
+def pretty(x):
+    if hasattr(x, 'name'):
+        return x.name
+    elif isinstance(x, Restriction):
+        if x.type in {29, 24}:
+            return x.property.name + x.value.name
 
