@@ -96,6 +96,21 @@ class SentenceAction(BaseAction):
                 else:
                     return f'{self.subj}:∃{self.relation}.{self.obj}'
 
+class SentencesAction(BaseAction):
+
+    def __getattr__(self, f):
+        for s in self.tokens:
+            return getattr(s, f)
+
+    def toFormula(self):
+        return ' && '.join(s.toFormula() for s in self.tokens)
+
+    def __str__(self):
+        return ' && '.join(str(s) for s in self.tokens)
+
+    def toDL(self):
+        return ';'.join(s.toDL() for s in self.tokens)
+
 
 class StatementAction(SentenceAction):
 
@@ -145,7 +160,7 @@ class DefinitionAction(StatementAction):
                     else:
                         subj.is_instance_of.append(obj)
             else:
-                self.subj.new(memory, (obj.main,))
+                self.subj.new(memory, (self.obj.main,))
         elif self.is_kind_of():
             if self.subj.content in memory:
                 if 'negative' in self:
@@ -159,10 +174,15 @@ class DefinitionAction(StatementAction):
                     else:
                         subj.is_a.append(obj)
             else:
-                self.subj.create(memory, (obj.main,))
+                self.subj.create(memory, (self.obj.main,))
 
         elif self.is_defined_as():
-            self.subj.create(memory, (obj.main,), {'equivalent_to':[obj]})
+            try:
+                def func(ns):
+                    ns["equivalent_to"] = [obj]
+                self.subj.create(memory, bases=(self.obj.content(memory),), exec_body=func)
+            except Exception as e:
+                print(e)
         return True
 
     def toDL(self):
@@ -176,6 +196,8 @@ class DefinitionAction(StatementAction):
                 return f'{self.subj} <: ~{self.obj.toDL()}'
             else:
                 return f'{self.subj} <: {self.obj.toDL()}'
+        else:
+            return f'{self.subj} := {self.obj.toDL()}'
 
 
 class GeneralQuestionAction(SentenceAction):
@@ -396,7 +418,7 @@ class VariableAction(AtomAction):
         if 'type' in self:
             return f'x:{self.type}'
         else:
-            return 'x'
+            return 'x:Thing'
 
     def toFormula(self):
         if 'type' in self:
@@ -446,7 +468,7 @@ class VariableConceptAction(VariableAction):
         if 'type' in self:
             return f'X:{self.type}'
         else:
-            return 'X'
+            return 'X:Thing'
 
     def toFormula(self):
         if 'type' in self:
@@ -471,15 +493,11 @@ class VariableConceptAction(VariableAction):
 
 class ConceptAction(ConstantAction):
 
-    def create(self, memory, bases=(Thing,), kwds=None):
+    def create(self, memory, bases=(Thing,), *args, **kwargs):
         name = memory._dict.get(self.content, self.content)
-        rel = types.new_class(name, bases, kwds)
+        rel = types.new_class(name, bases, *args, **kwargs)
         memory.update({name: rel})
         return rel
-
-    @property
-    def main():
-        return self.content(memory)
 
 
 class VpAction(ConceptAction):
@@ -609,8 +627,8 @@ class RelationAction(ConstantAction):
             else:
                 return self.create(memory)
 
-    def create(self, memory, bases=(ObjectProperty,), kwds=None):
-        rel = types.new_class(self.content, bases, kwds)
+    def create(self, memory, bases=(ObjectProperty,), *args, **kwargs):
+        rel = types.new_class(self.content, bases, *args, **kwargs)
         memory.update({self.content: rel})
         return rel
 
