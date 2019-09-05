@@ -62,7 +62,8 @@ run testx.py
     -- 让我想一想...教授
 
 # 视频
-[交互模式演示视频](https://www.bilibili.com/video/av56821908)
+[交互模式演示视频(旧版)](https://www.bilibili.com/video/av56821908)
+[交互模式演示视频](https://www.bilibili.com/video/av66578713)
 
 # 示例
 (English is deprecated currently)
