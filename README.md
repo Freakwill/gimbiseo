@@ -10,8 +10,7 @@
 - jieba (Optional)
 
 # Usage
-just run owlgimbiseo.py
-运行 owlgimbiseo.py
+just run `owlgimbiseo.py`
 
 ## Attention (only for Chinese)
 系统处于测试阶段，没有启用分词。若启用分词，则不必注意这些
@@ -20,7 +19,7 @@ just run owlgimbiseo.py
 - 词语之间用空格隔开
 
 # Test
-run testx.py
+run `test.py`
  
 ## Demo
 
