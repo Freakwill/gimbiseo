@@ -4,21 +4,25 @@
 基于 owlready2 的问答系统。灵感来自韩剧《金秘书你为何这样》
 ![](https://github.com/Freakwill/gimbiseo/blob/master/gimbiseo.jpg)
 
+## Requirements
+- OwlReady2
+- pyparsing
+- jieba (Optional)
 
-# 用法
+# Usage
 just run owlgimbiseo.py
 运行 owlgimbiseo.py
 
-## 注意
+## Attention (only for Chinese)
 系统处于测试阶段，没有启用分词。若启用分词，则不必注意这些
 - 个体名词必须加上引号
 - 动词前面加上v:, 量词加q:, 形容词在作定语的时候加a:(其余情况不加)
 - 词语之间用空格隔开
 
-# 测试
+# Test
 run testx.py
  
-## 包含复合名词
+## Demo
 
     -- "八公" 是 狗
     -- 狗是什么?
@@ -61,11 +65,11 @@ run testx.py
     -- "八公" v:喜欢 谁？
     -- 让我想一想...教授
 
-# 视频
+# Video
 [交互模式演示视频(旧版)](https://www.bilibili.com/video/av56821908)
 [交互模式演示视频](https://www.bilibili.com/video/av66578713)
 
-# 示例
+# Examples
 (English is deprecated currently)
 ```
 -- Who dose Alice love?
