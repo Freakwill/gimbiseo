@@ -327,7 +327,7 @@ class DefinitionQuestionAction(SpecialQuestionAction):
             if isinstance(known, Thing):
                 if 'type' in query:
                     Cs = set(known.INDIRECT_is_a) - {query.type(memory, locals)}
-                    return ', '.join(pretty(X) for X in proper(Cs) and not is_a(query.type(memory, locals), X))
+                    return ', '.join(pretty(X) for X in proper(Cs) if not is_a(query.type(memory, locals), X))
                 else:
                     Cs = set(known.INDIRECT_is_a) 
                     return ', '.join(pretty(X) for X in proper(Cs))
