@@ -8,7 +8,7 @@ from owlready2 import *
 class BaseAction:
     '''Base class for parsing action classes
 
-    Register the names of tokens in names list.
+    Register the names of tokens in `names` tuple.
     '''
     names = ()
     def __init__(self, instring='', loc=0, tokens=[]):
@@ -39,17 +39,23 @@ class BaseAction:
         return self.eval(*args, **kwargs)
 
     def eval(self, *args, **kwargs):
-        # evaluate it
+        # evaluate an expression
+        raise NotImplementedError
+
+    def exec(self, *args, **kwargs):
+        # execute a command
         raise NotImplementedError
 
 
 class SentenceAction(BaseAction):
+    # action for `sentence` parser
     names = ('subj', 'obj', 'relation', 'negative', 'quantifier', 'number')
 
     def __str__(self):
         return self.toFormula()
 
     def toFormula(self):
+        # translate to logic formula
         if self.is_instance_of():
             s = f'{self.obj}({self.subj})'
         else:
@@ -77,6 +83,7 @@ class SentenceAction(BaseAction):
         return self.exec(memory)
 
     def toDL(self):
+        # translate to DL expression
         if isinstance(self.obj, IndividualAction):
             if 'negative' in self:
                 return f'{self.subj}:~∃{self.relation}.{{{self.obj}}}'
@@ -115,17 +122,20 @@ class SentencesAction(BaseAction):
 class StatementAction(SentenceAction):
 
     def exec(self, memory, locals={}):
-        
+        # evalute a statement
         subj = self.subj(memory, locals)
         obj = self.obj(memory, locals)
         relation = self.relation(memory, locals)
         if isinstance(self.obj, IndividualAction):
             if 'negative' in self:
+                # subj : Not(∃ rel. {obj})
                 subj.is_a.append(Not(relation.value(obj)))
             else:
+                # subj rel obj
                 getattr(subj, self.relation.content).append(obj)
         else:
             if 'negative' in self:
+                # negetive form
                 if self.only():
                     subj.is_a.append(relation.some(Not(obj)))
                 elif self.exactly():
@@ -134,10 +144,13 @@ class StatementAction(SentenceAction):
                     subj.is_a.append(relation.only(Not(obj)))
             else:    
                 if self.only():
+                    # subj: ∀ rel. obj
                     subj.is_a.append(relation.only(obj))
                 elif self.exactly():
+                    # subj: =n rel. obj
                     subj.is_a.append(relation.exactly(obj, int(self.number)))
                 else:
+                    # subj: ∃ rel. obj
                     subj.is_a.append(relation.some(obj))
         return True
 
