@@ -65,6 +65,34 @@ run `test.py`
     -- "八公" v:喜欢 谁？
     -- 让我想一想...教授
 
+## Word cutting
+Applying the technology of word cutting
+
+    Users:  "八公"是狗
+    AI:  狗是什么?
+    Users:  狗是一种动物
+    AI:  动物是什么?
+    Users:  动物是一种事物
+    AI: 我知道了
+    Users:  "八公"是狗吗？
+    AI: 让我想一想...是
+    Users:  狗是一种什么？
+    AI: 让我想一想...动物
+    Users:  狗喜欢骨头
+    AI:  骨头是什么?
+    Users:  狗狗我好喜欢
+    AI: 能再说一遍吗？
+    Users:  骨头是一种事物
+    AI: 我知道了
+    Users:  狗喜欢骨头吗？
+    AI: 让我想一想...是
+    Users:  "八公"喜欢骨头吗？
+    AI: 让我想一想...是
+    Users:  骨头喜欢骨头吗？
+    AI: 让我想一想...不是
+    Users:  狗喜欢什么？
+    AI: 让我想一想...骨头
+
 # Video
 [交互模式演示视频(旧版)](https://www.bilibili.com/video/av56821908)
 [交互模式演示视频](https://www.bilibili.com/video/av66578713)
