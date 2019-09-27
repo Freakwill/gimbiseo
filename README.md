@@ -95,7 +95,9 @@ Applying the technology of word cutting
 
 # Video
 [交互模式演示视频(旧版)](https://www.bilibili.com/video/av56821908)
+
 [交互模式演示视频](https://www.bilibili.com/video/av66578713)
+
 [交互模式演示视频(分词)](https://www.bilibili.com/video/av69086776)
 
 # Examples
