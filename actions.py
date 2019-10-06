@@ -103,20 +103,21 @@ class SentenceAction(BaseAction):
                 else:
                     return f'{self.subj}:∃{self.relation}.{self.obj}'
 
-class SentencesAction(BaseAction):
 
-    def __getattr__(self, f):
-        for s in self.tokens:
-            return getattr(s, f)
+class SentencesAction(SentenceAction):
+    names = ('sentences',)
+    def __getattr__(self, x):
+        for s in self.sentences:
+            return getattr(s, x)
 
     def toFormula(self):
-        return ' && '.join(s.toFormula() for s in self.tokens)
+        return ' && '.join(s.toFormula() for s in self.sentences)
 
     def __str__(self):
-        return ' && '.join(str(s) for s in self.tokens)
+        return ' && '.join(str(s) for s in self.sentences)
 
     def toDL(self):
-        return ';'.join(s.toDL() for s in self.tokens)
+        return ';'.join(s.toDL() for s in self.sentences)
 
 
 class StatementAction(SentenceAction):
@@ -210,7 +211,21 @@ class DefinitionAction(StatementAction):
             else:
                 return f'{self.subj} <: {self.obj.toDL()}'
         else:
-            return f'{self.subj} := {self.obj.toDL()}'
+            return f'{self.subj} = {self.obj.toDL()}'
+
+    def toFormula(self):
+        if self.is_instance_of():
+            if 'negative' in self:
+                return f'~{self.obj}({self.subj})'
+            else:
+                return f'{self.obj}({self.subj})'
+        elif self.is_kind_of():
+            if 'negative' in self:
+                return f'~{self.obj}({self.subj})'
+            else:
+                return f'{self.obj}({self.subj})'
+        else:
+            return f'{self.subj} := {self.obj}'
 
 
 class GeneralQuestionAction(SentenceAction):
@@ -260,6 +275,7 @@ class GeneralQuestionAction(SentenceAction):
         else:
             return ans
 
+
 class SpecialQuestionAction(GeneralQuestionAction):
     names = ('query',) + SentenceAction.names
 
@@ -299,13 +315,16 @@ class SpecialQuestionAction(GeneralQuestionAction):
         if isinstance(query, VariableConceptAction):
             if flag == 1:
                 if 'type' in query:
-                    return ', '.join(pretty(X) for X in getattr(known, 'INDIRECT_'+self.relation) if isinstance(X, ThingClass) and not is_a(query.type(memory, locals), X))
+                    C = query.type(memory, locals)
+                    Cs = set(getattr(known, 'INDIRECT_'+self.relation)) - {C}
+                    return ', '.join(pretty(X) for X in Cs if isinstance(X, ThingClass) and not is_a(query.type(memory, locals), X))
                 else:
                     return ', '.join(pretty(X) for X in getattr(known, 'INDIRECT_'+self.relation) if isinstance(X, ThingClass))
             else:
                 clss = memory.clss
                 if 'type' in query:
-                    return ', '.join(pretty(X) for X in clss if is_a(X, query.type(memory, locals)) and not is_a(query.type(memory, locals), X) and known in getattr(X, 'INDIRECT_'+self.relation))
+                    C = query.type(memory, locals)
+                    return ', '.join(pretty(X) for X in clss if is_a(X, C) and not is_a(C, X) and known in getattr(X, 'INDIRECT_'+self.relation))
                 else:
                     return ', '.join(pretty(X) for X in clss if isinstance(X, ThingClass) and known in getattr(X, 'INDIRECT_'+self.relation))
         else:
@@ -339,15 +358,17 @@ class DefinitionQuestionAction(SpecialQuestionAction):
         if isinstance(query, VariableConceptAction):
             if isinstance(known, Thing):
                 if 'type' in query:
-                    Cs = set(known.INDIRECT_is_a) - {query.type(memory, locals)}
-                    return ', '.join(pretty(X) for X in proper(Cs) if not is_a(query.type(memory, locals), X))
+                    C = query.type(memory, locals)
+                    Cs = set(known.INDIRECT_is_a) - {C}
+                    return ', '.join(pretty(X) for X in proper(Cs, C=C) if not is_a(query.type(memory, locals), X))
                 else:
                     Cs = set(known.INDIRECT_is_a) 
                     return ', '.join(pretty(X) for X in proper(Cs))
             else:
                 if flag == 1:
                     if 'type' in query:
-                        Cs = set(known.INDIRECT_is_a) - {query.type(memory, locals), known}
+                        C = query.type(memory, locals)
+                        Cs = set(known.INDIRECT_is_a) - {C, known}
                         return ', '.join(pretty(X) for X in proper(Cs) if not is_a(query.type(memory, locals), X))
                     else:
                         Cs = set(known.INDIRECT_is_a) - {known}   
@@ -460,8 +481,10 @@ class VariableAction(AtomAction):
         else:
             raise NameError(memory.uninterpreted % self.content)
 
+
 class ConstantAction(AtomAction):
     pass
+
 
 class IndividualAction(ConstantAction):
     def new(self, memory, klass=Thing):
@@ -474,6 +497,7 @@ class IndividualAction(ConstantAction):
 
     def toConcept(self):
         return OneOf({self(memory)})
+
 
 class VariableConceptAction(VariableAction):
 
@@ -503,6 +527,7 @@ class VariableConceptAction(VariableAction):
                 raise TypeError(f'{v} is not a instance of {self.type}')
         else:
             self.value = v
+
 
 class ConceptAction(ConstantAction):
 
@@ -574,6 +599,7 @@ class VpAction(ConceptAction):
                 else:
                     return f'∃{self.relation}.{self.content}'
 
+
 class NpAction(ConceptAction):
     names = ('concepts', 'content')
     def eval(self, memory, locals={}):
@@ -588,11 +614,13 @@ class NpAction(ConceptAction):
     def toDL(self):
         return f'({self.content} & {"& ".join(concept.toDL() for concept in self.concepts)})'
 
+
 class CompoundConceptAction(ConceptAction):
     names = ('concepts',)
     def __init__(self):
         super(CompoundConceptAction, self).__init__()
         self.concepts = self.tokens
+
 
 class AndAction(CompoundConceptAction):
 
@@ -617,6 +645,7 @@ class OrAction(CompoundConceptAction):
     def toDL(self):
         return "| ".join(concept.toDL() for concept in self.concepts)
 
+
 class DeAction:
     names = ('owner', 'property')
     def eval(self, memory, locals={}):
@@ -632,13 +661,7 @@ class DeAction:
 
 class RelationAction(ConstantAction):
     def eval(self, memory, locals={}, check=False):
-        if self.content in memory:
-            return memory[self.content]
-        else:
-            if check:
-                raise NameError(memory.whatis % self.content)
-            else:
-                return self.create(memory)
+        return super(RelationAction, self).eval(memory, locals={}, check=False)
 
     def create(self, memory, bases=(ObjectProperty,), *args, **kwargs):
         rel = types.new_class(self.content, bases, *args, **kwargs)

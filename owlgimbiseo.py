@@ -17,12 +17,10 @@ onto_path.append(PATH)
 gimbiseo = get_ontology("http://test.org/gimbiseo.owl")
 gimbiseo.metadata.comment.append("Human-Machine Dialogue System")
 
-def print_(something, prompt='--', *args, **kwargs):
-    print(prompt, something, *args, **kwargs)
 
 def answer(q, memory):
     # close_world(gimbiseo)
-    print_(memory.template['think'], end='...')
+    
     try:
         sync_reasoner(debug=0)
     except Exception as ex:
@@ -31,57 +29,107 @@ def answer(q, memory):
 
 memory = ChineseMemory()
 
-def main(memory):
-    with gimbiseo:
-        
-        while True:
-            q = input('-- ')
-            # q = cut_flag(q)
-            try:
-                if q.startswith('%'):
-                    cmd = q.lstrip('%').split(' ')
-                    Command(cmd[0])(memory[arg] for arg in cmd[1:])
-                elif q == 'quit':
-                    gimbiseo.save()
+
+class Dialogue:
+    base = gimbiseo
+
+    def __init__(self, user_prompt='User: ', ai_prompt='AI: '):
+        self.user_prompt = user_prompt
+        self.ai_prompt = ai_prompt
+
+    def __call__(self, memory):
+        with Dialogue.base:
+            while True:
+                q = input(Dialogue.user_prompt)
+                q = cut_flag(q)
+                flag = self.handle(q, memory)
+                if flag == 'bk':
                     break
-                elif q == 'save':
-                    gimbiseo.save()
-                else:
-                    p = parse(q)
-            except:
-                # assert a == '' or memory.excuse == a
-                print_(memory.excuse)
-                continue
-            if isinstance(p, StatementAction):
-                if q in memory.history:
-                    print_(memory.no_repeat)
+                elif flag == 'con':
                     continue
-                else:
-                    memory.record(q)
-                    try:
-                        ans = p(memory)
-                        if ans:
-                            print_(memory.get)
-                            memory.re_exec()
-                    except NameError as e:
-                        print_(e)
-                        memory.cache(p)
-                    except Exception as e:
-                        print_(memory.excuse)
-            elif isinstance(p, SpecialQuestionAction):
-                ans = answer(p, memory)
-                if ans:
-                    print(ans)
-                else:
-                    print(memory.unknown)
-            elif isinstance(p, GeneralQuestionAction):
-                ans = answer(p, memory)
-                if ans:
-                    print(memory.yes)
-                else:
-                    print(memory.no)
+
+    def test(self, dict_, memory):
+        q_as = dict_
+        with Dialogue.base:
+            for q, a in q_as.items():
+                self.print(q, self.user_prompt)
+                q = cut_flag(q)
+                flag = self.handle(q, memory)
+                if flag == 'bk':
+                    break
+                elif flag == 'con':
+                    continue
+
+    def demo(self, *args, **kwargs):
+        import types, random
+        def demo_print(obj, something, prompt='User: ', *args, **kwargs):
+            print(prompt, end=' ')
+            for s in something:
+                print(s, end='')
+                time.sleep(random.random()*0.8)
+            print()
+        self.print = types.MethodType(demo_print, self)
+        for _ in range(5):
+            time.sleep(1)
+            print('@', end=' ')
+        print()
+        self.test(*args, **kwargs)
+
+    def print(self, s, prompt, *args, **kwargs):
+        print(prompt, s, *args, **kwargs)
+
+
+    def handle(self, q, memory):
+        try:
+            if q.startswith('%'):
+                cmd = q.lstrip('%').split(' ')
+                Command(cmd[0])(memory[arg] for arg in cmd[1:])
+            elif q == 'quit':
+                Dialogue.base.save()
+                return 'bk'
+            elif q == 'save':
+                Dialogue.base.save()
             else:
-                print_(memory.excuse)
+                p = parse(q)
+        except:
+            # assert a == '' or memory.excuse == a
+            self.print(self.ai_prompt, memory.excuse)
+            return 'con'
+        if isinstance(p, StatementAction):
+            if q in memory.history:
+                self.print(self.ai_prompt, memory.no_repeat)
+                return 'con'
+            else:
+                memory.record(q)
+                try:
+                    ans = p(memory)
+                    if ans:
+                        self.print(memory.get, self.ai_prompt)
+                        memory.re_exec()
+                except NameError as e:
+                    print(e)
+                    memory.cache(p)
+                except Exception as e:
+                    self.print(self.ai_prompt, memory.excuse)
+        elif isinstance(p, SpecialQuestionAction):
+            self.print(memory.template['think'], self.ai_prompt, end='...')
+            ans = answer(p, memory)
+            if ans:
+                self.print(ans)
+            else:
+                self.print(memory.unknown)
+        elif isinstance(p, GeneralQuestionAction):
+            self.print(memory.template['think'], self.ai_prompt, end='...')
+            ans = answer(p, memory)
+            if ans:
+                self.print(memory.yes)
+            else:
+                self.print(memory.no)
+        else:
+            self.print(memory.excuse, self.ai_prompt)
 
 if __name__ == '__main__':
-    main(memory)
+    from qadict import *
+    q_as = testy
+    d = Dialogue()
+    d.demo(testy, memory)
