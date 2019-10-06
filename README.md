@@ -14,13 +14,29 @@
 just run `owlgimbiseo.py`
 
 ## Attention (only for Chinese)
-系统处于测试阶段，没有启用分词。若启用分词，则不必注意这些
+不启用分词。
 - 个体名词必须加上引号
 - 动词前面加上v:, 量词加q:, 形容词在作定语的时候加a:(其余情况不加)
 - 词语之间用空格隔开
 
-# Test
-run `test.py`
+启用分词（默认）
+- 个体名词必须加上引号
+- `[v动词], [a形容词]`
+- `[不]`
+只需使用一次（在第一次出现时使用），如果保证能够识别词性，可以不加。
+
+# Usage/Test/Demo
+```python
+from qadict import *
+from owlgimbiseo import *
+
+q_as = testy
+d = Dialogue()
+memory = ChineseMemory()
+d(memory)
+
+d.demo(testy, memory) # d.test(testy, memory)
+```
  
 ## Demo
 
@@ -74,7 +90,7 @@ Applying the technology of word cutting
     AI:  动物是什么?
     Users:  动物是一种事物
     AI: 我知道了
-    Users:  "八公"是狗吗？
+    Users:  八公是狗吗？
     AI: 让我想一想...是
     Users:  狗是一种什么？
     AI: 让我想一想...动物
@@ -86,7 +102,7 @@ Applying the technology of word cutting
     AI: 我知道了
     Users:  狗喜欢骨头吗？
     AI: 让我想一想...是
-    Users:  "八公"喜欢骨头吗？
+    Users:  八公喜欢骨头吗？
     AI: 让我想一想...是
     Users:  骨头喜欢骨头吗？
     AI: 让我想一想...不是
@@ -140,5 +156,6 @@ I am thinking...
 
 # TODO
 - [x] 实现复合概念
+- [x] 实现分词
 - [ ] GUI设计
 - [ ] 与机器学习方法结合
