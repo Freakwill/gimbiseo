@@ -20,7 +20,6 @@ gimbiseo.metadata.comment.append("Human-Machine Dialogue System")
 
 def answer(q, memory):
     # close_world(gimbiseo)
-    
     try:
         sync_reasoner(debug=0)
     except Exception as ex:
@@ -59,12 +58,12 @@ class Dialogue:
 
     def demo(self, *args, **kwargs):
         import types, random
-        def demo_print(obj, something, prompt='User: ', *args, **kwargs):
+        def demo_print(obj, something, prompt='', *args, **kwargs):
             print(prompt, end=' ')
             for s in something:
                 print(s, end='')
                 time.sleep(random.random()*0.8)
-            print()
+            print('', *args, **kwargs)
         self.print = types.MethodType(demo_print, self)
         for _ in range(5):
             time.sleep(1)
