@@ -27,9 +27,6 @@ def answer(q, memory):
         print(ex, end='')
     return q.exec(memory)
 
-memory = ChineseMemory()
-
-
 class Dialogue:
     base = gimbiseo
 
@@ -75,7 +72,7 @@ class Dialogue:
         print()
         self.test(*args, **kwargs)
 
-    def print(self, s, prompt, *args, **kwargs):
+    def print(self, s, prompt='', *args, **kwargs):
         print(prompt, s, *args, **kwargs)
 
 
@@ -93,11 +90,11 @@ class Dialogue:
                 p = parse(q)
         except:
             # assert a == '' or memory.excuse == a
-            self.print(self.ai_prompt, memory.excuse)
+            self.print(memory.excuse, self.ai_prompt)
             return 'con'
         if isinstance(p, StatementAction):
             if q in memory.history:
-                self.print(self.ai_prompt, memory.no_repeat)
+                self.print(memory.no_repeat, self.ai_prompt)
                 return 'con'
             else:
                 memory.record(q)
@@ -107,10 +104,10 @@ class Dialogue:
                         self.print(memory.get, self.ai_prompt)
                         memory.re_exec()
                 except NameError as e:
-                    print(e)
+                    print(self.ai_prompt, e)
                     memory.cache(p)
                 except Exception as e:
-                    self.print(self.ai_prompt, memory.excuse)
+                    self.print(memory.excuse, self.ai_prompt)
         elif isinstance(p, SpecialQuestionAction):
             self.print(memory.template['think'], self.ai_prompt, end='...')
             ans = answer(p, memory)
@@ -131,5 +128,6 @@ class Dialogue:
 if __name__ == '__main__':
     from qadict import *
     q_as = testy
+    memory = ChineseMemory()
     d = Dialogue()
-    d.demo(testy, memory)
+    d.test(testy, memory)

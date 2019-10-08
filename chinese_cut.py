@@ -7,9 +7,8 @@ import logging
 jieba.setLogLevel(logging.INFO)
 
 jieba.add_word('是一种', 100, tag='')
-# jieba.add_word('不', 100000000, tag='')
+# jieba.add_word('不', 10000000, tag='')
 
-keywords={'是':':', '是一种':'<:', '的':'的', '吗':'ma', '？':'?'}
 keywords={'是':'是', '的':'的', '吗':'ma', '？':'？', '什么':'什么', '哪个':'哪个', '只':'q:只'}
 
 def cut(s):
@@ -132,4 +131,5 @@ def cut_flag(s, convert=convert):
     words = join(cut_(s))
     return ' '.join(map(convert, words))
 
-# print(cut_flag('我不是一种社会'))
+
+# print(cut_flag('水草[不]是一种能动的生物吗？'))
