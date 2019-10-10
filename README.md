@@ -114,11 +114,10 @@ Applying the technology of word cutting
     AI: 让我想一想...骨头
 
 # Video
-[交互模式演示视频(旧版)](https://www.bilibili.com/video/av56821908)
-
 [交互模式演示视频](https://www.bilibili.com/video/av66578713)
 
 [交互模式演示视频(分词)](https://www.bilibili.com/video/av69086776)
+[交互模式演示视频(分词改进)](https://www.bilibili.com/video/av70597500)
 
 # Examples
 (English is deprecated currently)
