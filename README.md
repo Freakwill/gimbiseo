@@ -8,7 +8,7 @@
 ## Requirements
 - OwlReady2
 - pyparsing
-- jieba (Optional)
+- jieba
 
 # Usage
 just run `owlgimbiseo.py`
