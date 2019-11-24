@@ -28,9 +28,10 @@ just run `owlgimbiseo.py`
 
 句法:
 ```
-   句子 -> 名词+动词+复合名词
-   复合名词 -> 形容词 + 形容词 + ... + 名词
-   形容词 -> ..的 | 动宾短语+的
+   句子 -> 名词+动词+复合名词    # 地球围绕太阳，地球是蓝色的行星
+   复合名词 -> 形容词 + 形容词 + ... + 名词  # 蓝色的行星，围绕太阳的行星，红色的围绕太阳的天体
+   形容词 -> ..的 | 动宾短语+的  # 蓝色的，围绕太阳的
+   名词 -> 个体 | 类   # 太阳，行星
 ``` 
 
 
@@ -128,7 +129,7 @@ Applying the technology of word cutting
 [交互模式演示视频(分词改进)](https://www.bilibili.com/video/av70597500)
 
 # Examples
-(English is deprecated currently)
+(English is not supported currently)
 ```
 -- Who dose Alice love?
 I am thinking...
