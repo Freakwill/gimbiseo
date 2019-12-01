@@ -26,6 +26,34 @@ def answer(q, memory):
         print(ex, end='')
     return q.exec(memory)
 
+
+class Response(object):
+    '''[Summary for Class Response]Response has 2 (principal) propteries
+    content: content
+    flag: flag [None]'''
+    def __init__(self, content='', flag=None):
+        self.content = content
+        self.flag = flag
+
+    def __str__(self):
+        return str(self.content)
+
+    def __eq__(self, other):
+        if isinstance(other, str):
+            return str(self)==other
+        else:
+            return str(self)==str(other)
+
+    def __getitem__(self, k):
+        return (self.content, self.flag)[k]
+
+    def __format__(self, spec=None):
+        if spec:
+            return f'{spec}: {self.content}'
+        else:
+            return f'-- {self.content}'
+
+
 class Dialogue:
     base = gimbiseo
 
@@ -33,28 +61,35 @@ class Dialogue:
         self.user_prompt = user_prompt
         self.ai_prompt = ai_prompt
 
-    def __call__(self, memory):
+    def run(self, memory, gui=False):
         with Dialogue.base:
             while True:
                 q = input(Dialogue.user_prompt)
                 q = cut_flag(q)
-                flag = self.handle(q, memory)
-                if flag == 'bk':
+                resp = self.handle(q, memory)
+                if resp.flag == 'bk':
                     break
-                elif flag == 'con':
+                elif resp.flag == 'con':
                     continue
+                else:
+                    self.print(resp, self.ai_prompt)
+
+    def __call__(self, memory):
+        self.run(memory)
 
     def test(self, dict_, memory):
         q_as = dict_
         with Dialogue.base:
-            for q, a in q_as.items():
+            for q, a in q_as:
                 self.print(q, self.user_prompt)
                 q = cut_flag(q)
-                flag = self.handle(q, memory)
-                if flag == 'bk':
+                resp = self.handle(q, memory)
+                if resp.flag == 'bk':
                     break
-                elif flag == 'con':
+                elif resp.flag == 'con':
                     continue
+                else:
+                    self.print(resp, self.ai_prompt)
 
     def demo(self, *args, **kwargs):
         import types, random
@@ -75,58 +110,61 @@ class Dialogue:
         print(prompt, s, *args, **kwargs)
 
 
-    def handle(self, q, memory):
+    def handle(self, q, memory, gui=False):
         try:
             if q.startswith('%'):
                 cmd = q.lstrip('%').split(' ')
                 Command(cmd[0])(memory[arg] for arg in cmd[1:])
+                return Response()
             elif q == 'quit':
                 Dialogue.base.save()
-                return 'bk'
+                return Response('', 'bk')
             elif q == 'save':
                 Dialogue.base.save()
+                return Response('', 'con')
             else:
                 p = parse(q)
         except:
             # assert a == '' or memory.excuse == a
-            self.print(memory.excuse, self.ai_prompt)
-            return 'con'
+            return memory.excuse, 'con'
         if isinstance(p, StatementAction):
             if q in memory.history:
-                self.print(memory.no_repeat, self.ai_prompt)
-                return 'con'
+                return Response(memory.no_repeat, 'con')
             else:
                 memory.record(q)
                 try:
                     ans = p(memory)
                     if ans:
-                        self.print(memory.get, self.ai_prompt)
                         memory.re_exec()
+                        return Response(memory.get)
+                    else:
+                        return Response()
                 except NameError as e:
-                    print(self.ai_prompt, e)
                     memory.cache(p)
+                    return Response(e)
                 except Exception as e:
-                    self.print(memory.excuse, self.ai_prompt)
+                    return Response(memory.excuse)
         elif isinstance(p, SpecialQuestionAction):
-            self.print(memory.template['think'], self.ai_prompt, end='...')
             ans = answer(p, memory)
             if ans:
-                self.print(ans)
+                return Response(ans)
             else:
-                self.print(memory.unknown)
+                return Response(memory.unknown)
         elif isinstance(p, GeneralQuestionAction):
-            self.print(memory.template['think'], self.ai_prompt, end='...')
             ans = answer(p, memory)
-            if ans:
-                self.print(memory.yes)
+            if ans is True:
+                return Response(memory.yes)
+            elif ans is False:
+                return Response(memory.no)
             else:
-                self.print(memory.no)
+                return Response(memory.none)
         else:
-            self.print(memory.excuse, self.ai_prompt)
+            return Response(memory.excuse)
+
 
 if __name__ == '__main__':
     from qadict import *
-    q_as = testy
     memory = ChineseMemory()
     d = Dialogue()
-    d.test(testy, memory)
+    d.test(dict_=testy, memory=memory)
+
