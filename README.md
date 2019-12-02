@@ -1,6 +1,8 @@
 # gimbiseo
 🤖Man-machine conversation system base on owlready2. It is inspirited by a Korean TV Play (*what's up with Gim seceretary*). When I initiated the development of the system, I was watching the TV recommended by many people. And I wanted to make a "digit secretary" to reduce the brain labor. Hence I just called it gimbiseo (Gim Secretary).
 
+Thank the author of OwlReady who helped me realizing the dream of human-machine dialogue system.
+
 基于 owlready2 的问答系统。灵感来自韩剧《金秘书你为何这样》。因为在开始开发这个系统的时候，我正在看这个部很多人安利的韩剧。而我最初是想做一个“数字秘书”，可以减轻我的脑力劳动。于是干脆就把这个项目叫 gimbiseo“金秘书”。
 
 旧版的[“数字秘书”](https://github.com/Freakwill/assistant)完全没有逻辑推理能力，只能记录每次的问答对，以及简单的查询-输出。特别感谢[OwlReady](https://owlready2.readthedocs.io/en/latest/)的作者使我人机对话的梦想成真。
