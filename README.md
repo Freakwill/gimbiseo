@@ -40,6 +40,8 @@ just run `owlgimbiseo.py`
 
 *注意* 疑问句的问号是中文的。
 
+详见帮助文档[](https://github.com/Freakwill/gimbiseo/blob/master/helpdoc.md)
+
 # Usage/Test/Demo
 ```python
 # basic usage
