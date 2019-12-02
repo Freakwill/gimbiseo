@@ -16,6 +16,7 @@ Thank the author of OwlReady who helped me realizing the dream of human-machine 
 
 # Usage
 just run `owlgimbiseo.py`
+or run `ui.py` with UI
 
 ## Attention (only for Chinese)
 不启用分词（目前不再推荐）
