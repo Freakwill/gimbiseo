@@ -28,11 +28,14 @@ just run `owlgimbiseo.py`
 
 句法:
 ```
-   句子 -> 名词+动词+复合名词    # 地球围绕太阳，地球是蓝色的行星
+   句子 -> 名词+动词+复合名词    # 地球围绕太阳，地球是蓝色的行星，月球围绕蓝色的围绕太阳的天体
    复合名词 -> 形容词 + 形容词 + ... + 名词  # 蓝色的行星，围绕太阳的行星，红色的围绕太阳的天体
    形容词 -> ..的 | 动宾短语+的  # 蓝色的，围绕太阳的
    名词 -> 个体 | 类   # 太阳，行星
 ``` 
+
+错误句法:
+我爱我的祖国。# “我的”不能作为形容词 
 
 
 *注意* 疑问句的问号是中文的。
@@ -127,7 +130,7 @@ Applying the technology of word cutting
 
 [交互模式演示视频(分词)](https://www.bilibili.com/video/av69086776)
 [交互模式演示视频(分词改进)](https://www.bilibili.com/video/av70597500)
-
+[GUI演示视频](https://www.bilibili.com/video/av70597500?p=2)
 # Examples
 (English is not supported currently)
 ```
@@ -169,5 +172,5 @@ I am thinking...
 # TODO
 - [x] 实现复合概念
 - [x] 实现分词
-- [ ] GUI设计
+- [x] GUI设计
 - [ ] 与机器学习方法结合
