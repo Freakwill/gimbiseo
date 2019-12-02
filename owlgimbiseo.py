@@ -2,14 +2,15 @@
 # -*- coding: utf-8 -*-
 
 import pathlib
+from owlready2 import *
 
-from utils import *
 from chinese_cut import *
 from actions import *
 from chinese import *
-from owlready2 import *
 
+from utils import *
 from error import *
+from commands import *
 
 
 PATH = pathlib.Path("kb")
@@ -28,9 +29,11 @@ def answer(q, memory):
 
 
 class Response(object):
-    '''[Summary for Class Response]Response has 2 (principal) propteries
-    content: content
-    flag: flag [None]'''
+    '''Response of the system
+
+    content: content of response
+    flag: control status [None]
+    '''
     def __init__(self, content='', flag=None):
         self.content = content
         self.flag = flag
@@ -55,6 +58,11 @@ class Response(object):
 
 
 class Dialogue:
+    """The dialuge system
+    
+    Variables:
+        base -- knowledge base
+    """
     base = gimbiseo
 
     def __init__(self, user_prompt='User: ', ai_prompt='AI: '):
@@ -82,7 +90,6 @@ class Dialogue:
         with Dialogue.base:
             for q, a in q_as:
                 self.print(q, self.user_prompt)
-                q = cut_flag(q)
                 resp = self.handle(q, memory)
                 if resp.flag == 'bk':
                     break
@@ -114,8 +121,8 @@ class Dialogue:
         try:
             if q.startswith('%'):
                 cmd = q.lstrip('%').split(' ')
-                Command(cmd[0])(memory[arg] for arg in cmd[1:])
-                return Response()
+                ret = Command(cmd[0])(*(memory.get(arg, arg) for arg in cmd[1:]))
+                return Response(ret, '%')
             elif q == 'quit':
                 Dialogue.base.save()
                 return Response('', 'bk')
@@ -123,10 +130,10 @@ class Dialogue:
                 Dialogue.base.save()
                 return Response('', 'con')
             else:
-                p = parse(q)
+                p = parse(q, cut=True)
         except:
             # assert a == '' or memory.excuse == a
-            return memory.excuse, 'con'
+            return Response(memory.excuse, 'con')
         if isinstance(p, StatementAction):
             if q in memory.history:
                 return Response(memory.no_repeat, 'con')
@@ -136,7 +143,7 @@ class Dialogue:
                     ans = p(memory)
                     if ans:
                         memory.re_exec()
-                        return Response(memory.get)
+                        return Response(memory.iget)
                     else:
                         return Response()
                 except NameError as e:

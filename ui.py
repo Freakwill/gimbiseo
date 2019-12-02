@@ -11,7 +11,12 @@ from window import *
 from owlgimbiseo import *
 
 
-class DialogueUI(QMainWindow, BaseUI):
+user_symbol = '🙂'
+sys_symbol = '💻'
+ai_symbol = '🤖'
+
+
+class DialogueUI(QMainWindow, Ui_Dialog):
     """UI for Dialogue
     """
     def __init__(self, dialogue, parent=None):
@@ -28,18 +33,21 @@ class DialogueUI(QMainWindow, BaseUI):
         self.dialogue.base.save()
 
     def quit(self):
-        pass
+        if False:
+            self.save()
+        self.close()
 
     def submit(self):
         q = self.edit_input.text()
         self.edit_input.clear()
-        self.display(q, '🙂')
-        q = cut_flag(q)
+        self.display(q, user_symbol)
         resp = self.dialogue.handle(q, memory)
         if resp.flag == 'bk':
             self.quit()
+        elif resp.flag == '%':
+            self.display(resp.content, sys_symbol)
         else:
-            self.display(str(resp), '🤖')
+            self.display(str(resp), ai_symbol)
 
     def demo(self):
         def typing(obj, t, p):
@@ -50,16 +58,20 @@ class DialogueUI(QMainWindow, BaseUI):
         from qadict import testy
         self.test = iter(testy)
         self.q = self.r = self.u = self.a = None
+        time.sleep(3)
 
         self.timer = QBasicTimer()
         if self.timer.isActive():
             self.timer.stop()
         else:
-            self.timer.start(100, self)
+            self.timer.start(150, self)
             self.text_information.setPlainText(f'演示开始于{QDateTime.currentDateTime().toString("yyyy-MM-dd hh:mm:ss")}')
 
-    def display(self, t, p):
-        self.text_dialogue.append(f'{p}: {t}')
+    def display(self, t, p=None):
+        if p is None:
+            self.text_dialogue.append(f'*{t}*')
+        else:
+            self.text_dialogue.append(f'{p}: {t}')
 
     def timerEvent(self, e):
         if self.q is None:
@@ -69,11 +81,12 @@ class DialogueUI(QMainWindow, BaseUI):
                 self.q=iter(q)
             except:
                 self.timer.stop()
+                self.display('演示结束')
                 self.text_information.setPlainText(f'演示结束于{QDateTime.currentDateTime().toString("yyyy-MM-dd hh:mm:ss")}')
         elif self.r is None:
             if self.u is None:
-                self.text_dialogue.append(f'🙂: ')
-                self.u = 'U'
+                self.text_dialogue.append(f'{user_symbol}: ')
+                self.u = True
             try:
                 if random.random()>0.5:
                     self.i = next(self.q)
@@ -86,8 +99,8 @@ class DialogueUI(QMainWindow, BaseUI):
                 self.r = iter(str(resp))
         else:
             if self.a is None:
-                self.text_dialogue.append(f'🤖: ')
-                self.a = 'A'
+                self.text_dialogue.append(f'{ai_symbol}: ')
+                self.a = True
             try:
                 if random.random()>0.5:
                     self.i = next(self.r)

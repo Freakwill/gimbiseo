@@ -7,7 +7,7 @@ import types
 
 class Memory:
 
-    _template = {'whatis': 'What is %s?', 'yes': 'Yes', 'no': 'No', 'get': 'I get', 'unknown': 'I don\'t know', 'think': 'I am thinking...'} 
+    _template = {'whatis': 'What is %s?', 'yes': 'Yes', 'no': 'No', 'iget': 'I get', 'unknown': 'I don\'t know', 'think': 'I am thinking...'} 
     _dict = {}
     _locals = {}
     _globals = globals().copy()
@@ -38,6 +38,12 @@ class Memory:
 
     def update(self, *args, **kwargs):
         self._locals.update(*args, **kwargs)
+
+    def get(self, k, value=None):
+        if k in self:
+            return self[k]
+        else:
+            return value
 
     def __str__(self):
         return str(self._locals)
@@ -105,28 +111,6 @@ class Memory:
     def props(self):
         return set(a for k, a in self if isinstance(a, ObjectPropertyClass))
 
-    
-
-
-commands = {'print': print}
-
-class Command(object):
-    '''Command class
-
-    name: name of the command
-    function: function of the command
-    '''
-    def __init__(self, name):
-        self.name = name
-        if name in globals():
-            self.function = globals()[name]
-        elif name in commands:
-            self.function = commands[name]
-        else:
-            raise Excption('No such command')
-
-    def __call__(self, *args, **kwargs):
-        self.function(*args, **kwargs)
 
 from owlready2 import *
 
@@ -195,13 +179,41 @@ def is_a(x, c, exclude=set()):
         # else:
         return False
 
-def proper(As):
-    As = list(As)
-    for _ in range(len(As)):
-        A = As.pop(0)
-        if not any(is_a(B, A) for B in As if hasattr(B,'is_a') and hasattr(B, 'INDIRECT_is_a')):
-            As.append(A)
+
+def inf(As, C=None):
+    # inf elements of As
+    if C:
+        As = list(As)
+        for _ in range(len(As)):
+            A = As.pop(0)
+            if not any(is_a(B, A) or And([B, C]) == A for B in As if hasattr(B,'is_a') and hasattr(B, 'INDIRECT_is_a')):
+                As.append(A)
+    else:
+        As = list(As)
+        for _ in range(len(As)):
+            A = As.pop(0)
+            if not any(is_a(B, A) for B in As if hasattr(B,'is_a') and hasattr(B, 'INDIRECT_is_a')):
+                As.append(A)
     return As
+
+proper = inf
+
+def sup(As, C=None):
+    # sup elements of As
+    if C:
+        As = list(As)
+        for _ in range(len(As)):
+            A = As.pop(0)
+            if not any(is_a(B, A) or And([B, C]) == A for B in As if hasattr(B,'is_a') and hasattr(B, 'INDIRECT_is_a')):
+                As.append(A)
+    else:
+        As = list(As)
+        for _ in range(len(As)):
+            A = As.pop(0)
+            if not any(is_a(A, B) for B in As):
+                As.append(A)
+    return As
+
 
 def pretty(x):
     if hasattr(x, 'name'):
@@ -209,4 +221,6 @@ def pretty(x):
     elif isinstance(x, Restriction):
         if x.type in {29, 24}:
             return x.property.name + x.value.name
+    else:
+        return ','.join(pretty(cc) for cc in x.Classes)
 

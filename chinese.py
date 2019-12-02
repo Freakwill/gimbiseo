@@ -17,9 +17,10 @@ from actions import *
 from chinese_cut import *
 
 class ChineseMemory(Memory):
-    _template = {'whatis': '%s是什么?', 'yes': '是', 'no': '不是', 'get': '我知道了',
+    _template = {'whatis': '%s是什么?', 'yes': '是', 'no': '不是', 'iget': '我知道了', 'none':'不知道',
      'unknown': '我不知道', 'think': '让我想一想', 'excuse':'能再说一遍吗？',
-     'inconsistent': '与已知的不一致', 'uninterpreted':'疑问词"%s"没有被解释'
+     'inconsistent': '与已知的不一致', 'uninterpreted':'疑问词"%s"没有被解释',
+     'no_repeat': '不要重复'
      }
     _dict = {'事物': 'Thing', '性质': 'Thing', '人':'Person', '对称关系':'SymmetricProperty', '传递关系': 'TransitiveProperty', '自反关系':'SymmetricProperty',
  '函数关系':'FunctionalProperty', '反函数关系':'InverseFunctionalProperty', '反对称关系':'AsymmetricProperty', '非自反关系':'IrreflexiveProperty'}
@@ -55,10 +56,17 @@ class ChineseConfig:
         return self.query == '哪种'
 
     def only(self):
-        return 'quantifier' in self and self.quantifier[0] == '只'
+        return 'quantifier' in self and self.quantifier == '只'
 
     def exactly(self):
-        return 'quantifier' in self and self.quantifier[0] == '只' and 'number' in self
+        return 'quantifier' in self and self.quantifier.content in {'只', '正好', '恰好'} and 'number' in self
+
+    def atleast(self):
+        return 'quantifier' in self and self.quantifier == '至少' and 'number' in self
+
+    def atmost(self):
+        return 'quantifier' in self and self.quantifier == '至多' and 'number' in self
+
 
 config(SentenceAction, ChineseConfig)
 config(VpAction, ChineseConfig)
@@ -84,7 +92,7 @@ verb = pp.Suppress('v:') + pp.Word(pp.pyparsing_unicode.Chinese.alphas)('content
 verb.addParseAction(RelationAction)
 
 concept = pp.Forward()
-qverb = pp.Optional(Quantifier)('quantifier') + verb('relation') + pp.Optional(SOME)('quantifier')
+qverb = pp.Optional(Quantifier('quantifier')) + verb('relation') + pp.Optional(SOME)('quantifier')
 vp = pp.Optional('不')('negative') + qverb + noun
 vp.addParseAction(VpAction)
 adj = pp.Suppress('a:') + word | vp + pp.Suppress('的')
@@ -145,12 +153,14 @@ definitionQuestion.addParseAction(DefinitionQuestionAction)
 # sentences.addParseAction(SentencesAction)
 
 question = specialQuestion | definitionQuestion |generalQuestion
-sentence = question | definition | statement
+sentence = (question | definition | statement) + pp.Optional(pp.pythonStyleComment)
 
 def parse(s, cut=False):
     if cut:
+        s = s.partition('#')[0]
         s = cut_flag(s)
+        print(s)
     return sentence.parseString(s, parseAll=True)[0]
 
 
-# print(parse('生物是一种[a有生命的]事物', 1))
+# print(parse('男人喜欢女人', 1))

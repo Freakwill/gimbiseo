@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'Programming/Qt/GimbiseoUI/MainWindow.ui'
 #
-# Created by: PyQt5 UI code generator 5.12.3
+# Created by: PyQt5 UI code generator 5.13.2
 #
 # WARNING! All changes made in this file will be lost!
 
@@ -10,13 +10,13 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 
-class BaseUI(object):
+class Ui_Dialog(object):
     def setupUi(self, Dialog):
         Dialog.setObjectName("Dialog")
-        Dialog.resize(558, 518)
+        Dialog.resize(559, 547)
         Dialog.setMinimumSize(QtCore.QSize(0, 30))
         self.verticalLayoutWidget = QtWidgets.QWidget(Dialog)
-        self.verticalLayoutWidget.setGeometry(QtCore.QRect(50, 30, 441, 261))
+        self.verticalLayoutWidget.setGeometry(QtCore.QRect(50, 30, 431, 301))
         self.verticalLayoutWidget.setObjectName("verticalLayoutWidget")
         self.verticalLayout = QtWidgets.QVBoxLayout(self.verticalLayoutWidget)
         self.verticalLayout.setContentsMargins(0, 0, 0, 0)
@@ -24,28 +24,25 @@ class BaseUI(object):
         self.text_dialogue = QtWidgets.QTextEdit(self.verticalLayoutWidget)
         self.text_dialogue.setObjectName("text_dialogue")
         self.verticalLayout.addWidget(self.text_dialogue)
-        self.horizontalLayoutWidget = QtWidgets.QWidget(Dialog)
-        self.horizontalLayoutWidget.setGeometry(QtCore.QRect(50, 310, 441, 111))
-        self.horizontalLayoutWidget.setObjectName("horizontalLayoutWidget")
-        self.horizontalLayout = QtWidgets.QHBoxLayout(self.horizontalLayoutWidget)
-        self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
-        self.horizontalLayout.setObjectName("horizontalLayout")
-        self.edit_input = QtWidgets.QLineEdit(self.horizontalLayoutWidget)
+        self.edit_input = QtWidgets.QLineEdit(self.verticalLayoutWidget)
         self.edit_input.setMinimumSize(QtCore.QSize(20, 20))
         self.edit_input.setObjectName("edit_input")
-        self.horizontalLayout.addWidget(self.edit_input)
-        self.verticalLayout_3 = QtWidgets.QVBoxLayout()
-        self.verticalLayout_3.setObjectName("verticalLayout_3")
+        self.verticalLayout.addWidget(self.edit_input)
+        self.horizontalLayoutWidget = QtWidgets.QWidget(Dialog)
+        self.horizontalLayoutWidget.setGeometry(QtCore.QRect(50, 350, 431, 71))
+        self.horizontalLayoutWidget.setObjectName("horizontalLayoutWidget")
+        self.hboxlayout = QtWidgets.QHBoxLayout(self.horizontalLayoutWidget)
+        self.hboxlayout.setContentsMargins(0, 0, 0, 0)
+        self.hboxlayout.setObjectName("hboxlayout")
         self.button_save = QtWidgets.QPushButton(self.horizontalLayoutWidget)
         self.button_save.setObjectName("button_save")
-        self.verticalLayout_3.addWidget(self.button_save)
-        self.button_quit = QtWidgets.QPushButton(self.horizontalLayoutWidget)
-        self.button_quit.setObjectName("button_quit")
-        self.verticalLayout_3.addWidget(self.button_quit)
+        self.hboxlayout.addWidget(self.button_save)
         self.button_demo = QtWidgets.QPushButton(self.horizontalLayoutWidget)
         self.button_demo.setObjectName("button_demo")
-        self.verticalLayout_3.addWidget(self.button_demo)
-        self.horizontalLayout.addLayout(self.verticalLayout_3)
+        self.hboxlayout.addWidget(self.button_demo)
+        self.button_quit = QtWidgets.QPushButton(self.horizontalLayoutWidget)
+        self.button_quit.setObjectName("button_quit")
+        self.hboxlayout.addWidget(self.button_quit)
         self.label_hm = QtWidgets.QLabel(Dialog)
         self.label_hm.setGeometry(QtCore.QRect(200, 10, 161, 16))
         font = QtGui.QFont()
@@ -78,7 +75,7 @@ class BaseUI(object):
         Dialog.setWindowTitle(_translate("Dialog", "Dialog"))
         self.edit_input.setPlaceholderText(_translate("Dialog", "输入语句或命令"))
         self.button_save.setText(_translate("Dialog", "保存"))
-        self.button_quit.setText(_translate("Dialog", "退出"))
         self.button_demo.setText(_translate("Dialog", "演示"))
+        self.button_quit.setText(_translate("Dialog", "退出"))
         self.label_hm.setText(_translate("Dialog", "人机对话系统"))
         self.label_information.setText(_translate("Dialog", "打印信息"))

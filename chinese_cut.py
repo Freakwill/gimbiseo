@@ -89,7 +89,7 @@ def convert1(w):
         return w
     if w.word in keywords:
         return w.word
-    elif w.flag in {'uj', 'n', 'd'}:
+    elif w.flag in {'uj', 'n', 'd', 'x'}:
         return w.word
     elif w.flag in {'nr', 'ns', 'nrt', 'nt', 'r', 'm'}:
         return f'"{w.word}"'
@@ -101,7 +101,7 @@ def convert2(w):
         return w
     if w.word in keywords:
         return w.word
-    elif w.flag in {'uj', 'n', 'd'}:
+    elif w.flag in {'uj', 'n', 'd', 'x'}:
         return w.word
     elif w.flag in {'nr', 'ns', 'nrt', 'nt', 'r'}:
         return f'"{w.word}"'
@@ -116,7 +116,7 @@ def convert(w):
             return w
     if w.word in keywords:
         return keywords[w.word]
-    elif w.flag in {'uj', 'n', 'd', 'zg', 'nz'}:
+    elif w.flag in {'uj', 'n', 'd', 'zg', 'nz', 'x'}:
         return w.word
     elif w.flag in {'nr', 'ns', 'nrt', 'nt', 'r', 'm', 'ind'}:
         return f'"{w.word}"'
