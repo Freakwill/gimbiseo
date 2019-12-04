@@ -8,7 +8,7 @@ from PyQt5.QtGui import QTextCursor
 from PyQt5.QtCore import QBasicTimer, QDateTime
 from window import *
 
-from owlgimbiseo import *
+from gimbiseo import *
 
 
 user_symbol = '🙂'
@@ -50,14 +50,15 @@ class DialogueUI(QMainWindow, Ui_Dialog):
             self.display(str(resp), ai_symbol)
 
     def demo(self):
-        def typing(obj, t, p):
-            self.text_dialogue.append(f'{p}: ')
-            for i in t:
-                self.text_dialogue.insertPlainText(i)
-        self.display = types.MethodType(typing, self)
+        # def typing(obj, t, p):
+        #     self.text_dialogue.append(f'{p}: ')
+        #     for i in t:
+        #         self.text_dialogue.insertPlainText(i)
+        # self.display = types.MethodType(typing, self)
         from qadict import testy
         self.test = iter(testy)
         self.q = self.r = self.u = self.a = None
+        self.text_information.setPlainText(f'3秒钟后开始演示')
         time.sleep(3)
 
         self.timer = QBasicTimer()
@@ -93,7 +94,7 @@ class DialogueUI(QMainWindow, Ui_Dialog):
                     self.text_dialogue.insertPlainText(self.i)
 
             except:
-                q = cut_flag(self.edit_input.text())
+                q = self.edit_input.text()
                 self.edit_input.clear()
                 resp = self.dialogue.handle(q, memory)
                 self.r = iter(str(resp))
@@ -112,7 +113,7 @@ class DialogueUI(QMainWindow, Ui_Dialog):
 if __name__ == '__main__':
     memory = ChineseMemory()
     d = Dialogue()
-    with Dialogue.base:
+    with d.base:
         app = QApplication([])
         myWin=DialogueUI(d)
         myWin.show()
