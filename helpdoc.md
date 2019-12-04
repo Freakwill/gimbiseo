@@ -2,7 +2,24 @@
 
 gimbiseo 人机对话系统
 
+[TOC]
+
 ## 基本用法：
+
+### 运行
+
+```python
+from gimbiseo import *
+memory = ChineseMemory()
+d = Dialogue()
+with d.base:
+    app = QApplication([])
+    myWin=DialogueUI(d)
+    myWin.show()
+    app.exec_()
+```
+
+### 人机交互
 
 个体名词必须加上引号（英文）
 [v动词], [a形容词]
@@ -80,7 +97,7 @@ gimbiseo 人机对话系统
 
 1. 如果语句中有未出现的名词，系统会提示输入
 2. 重复陈述句，系统会警告重复输入
-3. 语句编译失败，系统会提示重新输入
+3. 语句编译成失败，会提示重新输入
 
 ## 命令
 
