@@ -1,3 +1,4 @@
 Owlready2
 pyparsing
 jieba
+PyQt5
