@@ -21,6 +21,7 @@ gimbiseo.metadata.comment.append("Human-Machine Dialogue System")
 
 def answer(q, memory):
     # close_world(gimbiseo)
+    AllDisjoint([c for c in memory.clss])
     try:
         sync_reasoner(debug=0)
     except Exception as ex:

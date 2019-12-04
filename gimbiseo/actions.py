@@ -284,12 +284,12 @@ class GeneralQuestionAction(SentenceAction):
                     c = self.relation(memory).some(obj)
                 if isinstance(self.subj, IndividualAction):
                     ans = is_instance_of(subj, c)
-                    if not ans and Not(c) not in subj.INDIRECT_is_instance_of:
-                        return None
+                    # if not ans and not is_not_instance_of(subj, c):
+                    #     return None
                 else:
                     ans = is_a(subj, c)
-                    if not ans and Not(c) not in subj.INDIRECT_is_a:
-                        return None
+                    # if not ans and not is_not_a(subj, c):
+                    #     return None
         if 'negative' in self:
             return not ans
         else:
@@ -337,16 +337,28 @@ class SpecialQuestionAction(GeneralQuestionAction):
                 if 'type' in query:
                     C = query.type(memory, locals)
                     Cs = set(getattr(known, 'INDIRECT_'+self.relation)) - {C}
+                    Cs = inf(Cs, C=C)
                     return ', '.join(pretty(X) for X in Cs if isinstance(X, ThingClass) and not is_a(query.type(memory, locals), X))
                 else:
-                    return ', '.join(pretty(X) for X in getattr(known, 'INDIRECT_'+self.relation) if isinstance(X, ThingClass))
+                    Cs = set(getattr(known, 'INDIRECT_'+self.relation))
+                    Cs = inf(Cs)
+                    return ', '.join(pretty(X) for X in Cs if isinstance(X, ThingClass))
             else:
                 clss = memory.clss
                 if 'type' in query:
                     C = query.type(memory, locals)
-                    return ', '.join(pretty(X) for X in clss if is_a(X, C) and not is_a(C, X) and known in getattr(X, 'INDIRECT_'+self.relation))
+                    Cs = set([X for X in clss if known in getattr(X, 'INDIRECT_'+self.relation)])
+                    Cs_ = sup(Cs, C=C)
+                    if len(Cs_) == 1:
+                        Cs -= {Cs_[0]}
+                        Cs = sup(Cs, C=C)
+                    else:
+                        Cs = Cs_
+                    return  ', '.join(pretty(X) for X in Cs if not is_a(C, X))
                 else:
-                    return ', '.join(pretty(X) for X in clss if isinstance(X, ThingClass) and known in getattr(X, 'INDIRECT_'+self.relation))
+                    Cs = set([X for X in clss if known in getattr(X, 'INDIRECT_'+self.relation)])
+                    Cs = sup(Cs)
+                    return ', '.join(pretty(X) for X in Cs if isinstance(X, ThingClass))
         else:
             if flag == 1:
                 if 'type' in query:
@@ -380,24 +392,28 @@ class DefinitionQuestionAction(SpecialQuestionAction):
                 if 'type' in query:
                     C = query.type(memory, locals)
                     Cs = set(known.INDIRECT_is_a) - {C}
-                    return ', '.join(pretty(X) for X in proper(Cs, C=C) if not is_a(query.type(memory, locals), X))
+                    return ', '.join(pretty(X) for X in inf(Cs, C=C) if not is_a(query.type(memory, locals), X))
                 else:
                     Cs = set(known.INDIRECT_is_a) 
-                    return ', '.join(pretty(X) for X in proper(Cs))
+                    return ', '.join(pretty(X) for X in inf(Cs))
             else:
                 if flag == 1:
                     if 'type' in query:
                         C = query.type(memory, locals)
                         Cs = set(known.INDIRECT_is_a) - {C, known}
-                        return ', '.join(pretty(X) for X in proper(Cs) if not is_a(query.type(memory, locals), X))
+                        Cs = inf(Cs, C=C)
+                        return ', '.join(pretty(X) for X in Cs if not is_a(query.type(memory, locals), X))
                     else:
-                        Cs = set(known.INDIRECT_is_a) - {known}   
-                        return ', '.join(pretty(X) for X in proper(Cs))
+                        Cs = set(known.INDIRECT_is_a) - {known}
+                        Cs = inf(Cs)
+                        return ', '.join(pretty(X) for X in Cs)
                 else:
+                    Cs = [X for X in memory.clss if is_a(X, known) and X != known]
+                    Cs = sup(Cs)
                     if 'type' in query:
-                        return ', '.join(pretty(X) for X in memory.clss if is_a(X, known) and X != known and not is_a(query.type(memory, locals), X))
+                        return ', '.join(pretty(X) for X in Cs and not is_a(query.type(memory, locals), X))
                     else:
-                        return ', '.join(pretty(X) for X in memory.clss if is_a(X, known) and X != known)
+                        return ', '.join(pretty(X) for X in Cs)
         else:
             if 'type' in query:
                 return ', '.join(x.name for x in memory.inds if is_instance_of(x, query.type(memory, locals)) and is_instance_of(x, known))
