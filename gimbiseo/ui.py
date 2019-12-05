@@ -57,7 +57,7 @@ class DialogueUI(QMainWindow, Ui_Dialog):
         # self.display = types.MethodType(typing, self)
         from qadict import testy
         self.test = iter(testy)
-        self.q = self.r = self.u = self.a = None
+        self.q = None
         self.text_information.setPlainText(f'3秒钟后开始演示')
         time.sleep(3)
 
@@ -78,36 +78,19 @@ class DialogueUI(QMainWindow, Ui_Dialog):
         if self.q is None:
             try:
                 q, _ = next(self.test)
-                self.edit_input.setText(q)
                 self.q=iter(q)
             except:
                 self.timer.stop()
                 self.display('演示结束')
                 self.text_information.setPlainText(f'演示结束于{QDateTime.currentDateTime().toString("yyyy-MM-dd hh:mm:ss")}')
-        elif self.r is None:
-            if self.u is None:
-                self.text_dialogue.append(f'{user_symbol}: ')
-                self.u = True
+        else:
             try:
                 if random.random()>0.5:
                     self.i = next(self.q)
-                    self.text_dialogue.insertPlainText(self.i)
-
+                    self.edit_input.setText(self.edit_input.text()+self.i)
             except:
-                q = self.edit_input.text()
-                self.edit_input.clear()
-                resp = self.dialogue.handle(q, memory)
-                self.r = iter(str(resp))
-        else:
-            if self.a is None:
-                self.text_dialogue.append(f'{ai_symbol}: ')
-                self.a = True
-            try:
-                if random.random()>0.5:
-                    self.i = next(self.r)
-                    self.text_dialogue.insertPlainText(self.i)
-            except:
-                self.q = self.r = self.u = self.a = None
+                self.submit()
+                self.q = None
 
 
 if __name__ == '__main__':
