@@ -70,6 +70,7 @@ class Memory:
         self._cache.append(s)
 
     def re_exec(self):
+        # execute the sentences in cache
         flag = True
         while flag:
             H = copy.copy(self._cache)
@@ -155,17 +156,20 @@ def is_instance_of(i, c, exclude=set()):
 
 
 def is_a(x, c, exclude=set()):
-    if x == c:
+    if x == c or c == Thing:
         return True
-    if hasattr(x, 'is_a') and x.is_a and c in x.is_a:
+    elif hasattr(x, 'is_a') and c in x.is_a:
         return True
-    elif hasattr(x, 'INDIRECT_is_a') and x.INDIRECT_is_a:
+    elif hasattr(x, 'INDIRECT_is_a'):
         if c in x.INDIRECT_is_a:
             return True
-        else:
-            for b in x.INDIRECT_is_a:
-                if b != x:
-                    return is_a(b, c)
+        # else:
+        #     for b in x.INDIRECT_is_a:
+        #         if hasattr(c, 'INDIRECT_is_a') and b in c.INDIRECT_is_a:
+        #             pass
+        #         if b != x and b != Thing:
+        #             if is_a(b, c):
+        #                 return True
 
     if isinstance(c, And):
         return all(is_a(x, cc) for cc in c.Classes)
@@ -176,7 +180,7 @@ def is_a(x, c, exclude=set()):
     elif isinstance(x, OneOf):
         return all(is_instance_of(xi, c) for xi in x.instances)
     elif isinstance(x, And):
-        return any(is_a(cc, c) for cc in x.Classes)
+        return any(is_a(xi, c) for xi in x.Classes)
     else:
         # for y in x.is_a:
         #     if hasattr(y, 'is_a') and y not in exclude:
