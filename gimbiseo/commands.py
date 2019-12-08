@@ -21,7 +21,7 @@ class Command(object):
         elif name in _commands:
             self.function = _commands[name]
         else:
-            raise Excption('No such command')
+            raise Exception('No such command')
 
     def __call__(self, *args, **kwargs):
         return self.function(*args, **kwargs)
