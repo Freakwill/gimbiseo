@@ -48,17 +48,10 @@ or run `ui.py` with UI
 详见[帮助文档](https://github.com/Freakwill/gimbiseo/blob/master/helpdoc.md)
 
 # Usage/Test/Demo
-```python
-# basic usage
-from owlgimbiseo import *
-d = Dialogue()
-memory = ChineseMemory()
-d(memory)
 
-# test/demo
-from qadict import *
-q_as = testy
-d.demo(testy, memory) # d.test(testy, memory)
+## Quick start
+```python
+import gimbiseo.main
 ```
  
 ## Demo
