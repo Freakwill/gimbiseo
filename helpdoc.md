@@ -9,14 +9,7 @@ gimbiseo 人机对话系统
 ### 运行
 
 ```python
-from gimbiseo import *
-memory = ChineseMemory()
-d = Dialogue()
-with d.base:
-    app = QApplication([])
-    myWin=DialogueUI(d)
-    myWin.show()
-    app.exec_()
+from gimbiseo import main
 ```
 
 ### 人机交互
