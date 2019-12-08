@@ -4,12 +4,16 @@ gimbiseo 人机对话系统
 
 [TOC]
 
+## 截图
+
+![](screenshot.jpg)
+
 ## 基本用法：
 
 ### 运行
 
 ```python
-from gimbiseo import main
+import gimbiseo.main
 ```
 
 ### 人机交互
