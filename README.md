@@ -15,8 +15,8 @@ Thank the author of OwlReady who helped me realizing the dream of human-machine 
 - jieba
 
 # Usage
-just run `owlgimbiseo.py`
-or run `ui.py` with UI
+just run `dialogue.py`
+or run `main.py` with UI
 
 ## Attention (only for Chinese)
 不启用分词（目前不再推荐）
