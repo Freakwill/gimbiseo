@@ -128,8 +128,9 @@ Applying the technology of word cutting
 # Video
 [交互模式演示视频](https://www.bilibili.com/video/av66578713) (deprecated)
 
+[交互模式演示视频(分词)](https://www.bilibili.com/video/av69086776)(deprecated)
 
-[交互模式演示视频(分词)](https://www.bilibili.com/video/av69086776)
+
 [交互模式演示视频(分词改进)](https://www.bilibili.com/video/av70597500)
 [GUI演示视频](https://www.bilibili.com/video/av70597500?p=3)
 
