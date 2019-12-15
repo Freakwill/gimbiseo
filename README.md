@@ -126,11 +126,13 @@ Applying the technology of word cutting
     AI: 让我想一想...骨头
 
 # Video
-[交互模式演示视频](https://www.bilibili.com/video/av66578713)
+[交互模式演示视频](https://www.bilibili.com/video/av66578713) (deprecated)
+
 
 [交互模式演示视频(分词)](https://www.bilibili.com/video/av69086776)
 [交互模式演示视频(分词改进)](https://www.bilibili.com/video/av70597500)
-[GUI演示视频](https://www.bilibili.com/video/av70597500?p=2)
+[GUI演示视频](https://www.bilibili.com/video/av70597500?p=3)
+
 # Examples
 (English is not supported currently)
 ```
@@ -174,6 +176,6 @@ I am thinking...
 - [x] 实现分词
 - [x] GUI设计
 - [ ] 与机器学习方法结合
-- [ ] 考虑主谓短语
+- [x] 考虑主谓短语
 
 旧版的[“数字秘书”](https://github.com/Freakwill/assistant)完全没有逻辑推理能力，只能记录每次的问答对，以及简单的查询-输出。特别感谢[OwlReady](https://owlready2.readthedocs.io/en/latest/)的作者使我人机对话的梦想成真。
