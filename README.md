@@ -180,5 +180,6 @@ I am thinking...
 - [x] 考虑主谓短语
 - [ ] 支持含数量的量词
 - [ ] 支持复合主语
+- [ ] 支持函数
 
 旧版的[“数字秘书”](https://github.com/Freakwill/assistant)完全没有逻辑推理能力，只能记录每次的问答对，以及简单的查询-输出。特别感谢[OwlReady](https://owlready2.readthedocs.io/en/latest/)的作者使我人机对话的梦想成真。
