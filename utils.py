@@ -43,6 +43,11 @@ def is_instance_of(i, c, exclude=set()):
         else:
             return False
 
+def not_instance_of(x, c, exclude=set()):
+    class not_c(Thing):
+        equivalent_to = [Not(c)]
+    return is_instance_of(x, c, exclude)
+
 
 def is_a(x, c, exclude=set()):
     if x == c or c == Thing:
@@ -79,6 +84,11 @@ def is_a(x, c, exclude=set()):
         #             exclude = exclude.add(y)
         # else:
         return False
+
+def not_a(x, c, exclude=set()):
+    class not_c(Thing):
+        equivalent_to = [Not(c)]
+    return is_a(x, c, exclude)
 
 
 def inf(As, C=None):
