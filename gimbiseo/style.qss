@@ -1,6 +1,11 @@
+#label_hm {color: red}
+
 QTextEdit {background-color: azure}
 
 QLineEdit {background-color: black;
 color: white}
 
-QPlainTextEdit {color: red}
+QPlainTextEdit {color: orange}
+
+QPushButton {color: blue}
+QPushButton:hover {color: cyan}

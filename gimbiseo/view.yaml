@@ -1,0 +1,16 @@
+user:
+  emoji: '🙂'
+  name: William
+  path: 'images/user.png'
+  class: human
+
+sys:
+  emoji: '💻'
+  path: images/sys.png
+  class: machine
+
+ai:
+  emoji: '🤖'
+  name: Lisa
+  path: 'images/robot.png'
+  class: machine
