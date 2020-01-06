@@ -157,8 +157,9 @@ definitionQuestion.addParseAction(DefinitionQuestionAction)
 question = specialQuestion | definitionQuestion |generalQuestion
 sentence = (question | definition | statement) + pp.Optional(pp.pythonStyleComment)
 
-def parse(s, cut=False):
+def parse(s, cut=True):
     if cut:
         s = s.partition('#')[0]
         s = cut_flag(s)
     return sentence.parseString(s, parseAll=True)[0]
+
