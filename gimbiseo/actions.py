@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import types
-from utils import *
+from .utils import *
 from owlready2 import *
 
 class BaseAction:
@@ -269,7 +269,7 @@ class GeneralQuestionAction(SentenceAction):
         else:
             if isinstance(self.obj, IndividualAction):
                 ans = obj in getattr(subj, self.relation.content) or obj in getattr(subj, 'INDIRECT_'+self.relation)
-                if not ans and self.relation(memory).value(obj) not in subj.INDIRECT_is_a:
+                if not ans and not_a(subj, self.relation(memory).value(obj)):
                     return None
             else:
                 if self.only():
@@ -284,12 +284,12 @@ class GeneralQuestionAction(SentenceAction):
                     c = self.relation(memory).some(obj)
                 if isinstance(self.subj, IndividualAction):
                     ans = is_instance_of(subj, c)
-                    # if not ans and not is_not_instance_of(subj, c):
-                    #     return None
+                    if not ans and not not_instance_of(subj, c):
+                        return None
                 else:
                     ans = is_a(subj, c)
-                    # if not ans and not is_not_a(subj, c):
-                    #     return None
+                    if not ans and not not_a(subj, c):
+                        return None
         if 'negative' in self:
             return not ans
         else:
@@ -435,7 +435,6 @@ class CompoundSentenceAction(BaseAction):
 class AtomAction(BaseAction):
     names = ('content',)
     _depth = 1
-
 
     def __eq__(self, other):
         if isinstance(other, str):
@@ -646,6 +645,39 @@ class VpAction(ConceptAction):
                 else:
                     return f'∃{self.relation}.{self.content}'
 
+class NvAction(ConceptAction):
+    # noun - verb phrase
+    names = ('content', 'relation')
+
+    def eval(self, memory, locals={}):
+        rel = self.relation(memory, locals)
+        A = self.content(memory, locals)
+        if 'negative' in self:
+            class not_rel(Thing):
+                equivalent_to = [Not(Or(A.rel))]
+            return not_rel
+        else:
+            class not_rel(Thing):
+                equivalent_to = [Or(A.rel)]
+            return not_rel
+
+    # def sub(self, v, *args, **kwargs):
+    #     return self.eval(memory, locals={})
+
+    def toFormula(self):
+        return '%s(%s, ?)' % (self.relation, self.content)
+
+    def toDL(self):
+        if isinstance(self.content, IndividualAction):
+            if 'negative' in self:
+                return f'~{{{self.content}}}.{self.relation}'
+            else:
+                return f'{{{self.content}}}.{self.relation}'
+        else:
+            if 'negative' in self:
+                return f'~{self.content}.{self.relation}'
+            else:
+                return f'{self.content}.{self.relation}'
 
 class NpAction(ConceptAction):
     # noun phrase

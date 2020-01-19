@@ -11,10 +11,10 @@ warnings.filterwarnings("ignore")
 import types
 
 import pyparsing as pp
-import pyparsing_ext as ppx
 
-from actions import *
-from chinese_cut import *
+from .actions import *
+from .chinese_cut import *
+from .memory import *
 
 class ChineseMemory(Memory):
     _template = {'whatis': '%s是什么?', 'yes': '是', 'no': '不是', 'iget': '我知道了', 'none':'不知道',
@@ -94,8 +94,10 @@ verb.addParseAction(RelationAction)
 concept = pp.Forward()
 qverb = pp.Optional(Quantifier('quantifier')) + verb('relation') + pp.Optional(SOME)('quantifier')
 vp = pp.Optional('不')('negative') + qverb + noun
+nv = pp.Optional('不')('negative') + noun + verb
 vp.addParseAction(VpAction)
-adj = pp.Suppress('a:') + word | vp + pp.Suppress('的')
+nv.addParseAction(NvAction)
+adj = pp.Suppress('a:') + word | vp + pp.Suppress('的') | nv + pp.Suppress('的')
 np = pp.OneOrMore(adj)('concepts') + word
 np.addParseAction(NpAction)
 
@@ -106,12 +108,12 @@ is_ =  pp.Optional('也')+ pp.oneOf(['是', '是一种', '定义为'])('relation
 ands = pp.delimitedList(noun, delim="c:和")('concepts')
 ands.addParseAction(AndAction)
 
-concept <<= noun | np | adj
+concept <<= np | adj | noun
 
 subj = (pp.Suppress('a:') + word | noun)('subj')
 subj.addParseAction(unpack)
 definition = subj + pp.Optional('不')('negative') + is_ + concept('obj')
-statement = subj + pp.Optional('不')('negative') +  (qverb + pp.pyparsing_common.integer('number') | qverb) + concept('obj')
+statement = subj + pp.Optional('不')('negative') +  (qverb + pp.pyparsing_common.integer('number') + '个' | qverb) + concept('obj')
 #statementq = noun('subj')+ pp.Optional('不')('negative') + Quantifier('quantifier') + verb('relation') + pp.pyparsing_common.integer('number') + concept('obj')
 
 generalQuestion = (definition.copy()|statement.copy()) + pp.Suppress('ma' + pp.Optional('？'))
@@ -155,12 +157,9 @@ definitionQuestion.addParseAction(DefinitionQuestionAction)
 question = specialQuestion | definitionQuestion |generalQuestion
 sentence = (question | definition | statement) + pp.Optional(pp.pythonStyleComment)
 
-def parse(s, cut=False):
+def parse(s, cut=True):
     if cut:
         s = s.partition('#')[0]
         s = cut_flag(s)
-        print(s)
     return sentence.parseString(s, parseAll=True)[0]
 
-
-# print(parse('男人喜欢女人', 1))

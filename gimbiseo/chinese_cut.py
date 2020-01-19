@@ -17,7 +17,7 @@ def cut(s):
     else word_flag.word for word_flag in words)
 
 def cut_(s):
-    words_ = [word for word in pseg.cut(s) if word.flag != 'x' or word.word != ' ']
+    words_ = [word for word in pseg.cut(s) if word.word != ' ']
     k = 0
     words = []
     while k < len(words_):
@@ -116,7 +116,7 @@ def convert(w):
             return w
     if w.word in keywords:
         return keywords[w.word]
-    elif w.flag in {'uj', 'n', 'd', 'zg', 'nz', 'x'}:
+    elif w.flag in {'uj', 'n', 'd', 'zg', 'nz', 'x', 's'}:
         return w.word
     elif w.flag in {'nr', 'ns', 'nrt', 'nt', 'r', 'm', 'ind'}:
         return f'"{w.word}"'
@@ -132,4 +132,4 @@ def cut_flag(s, convert=convert):
     return ' '.join(map(convert, words))
 
 
-# print(cut_flag('水草[不]是一种能动的生物吗？'))
+# print(cut_flag('[海水中]是一种水中'))
