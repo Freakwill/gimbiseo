@@ -12,12 +12,17 @@ from gimbiseo.window import *
 from gimbiseo.dialogue import *
 
 
+GPATH = pathlib.Path(__file__).parent
+
 VIEW_PATH = pathlib.Path('view.yaml')
+if not VIEW_PATH.exists():
+    VIEW_PATH = GPATH / VIEW_PATH
 view = yaml.load(VIEW_PATH.read_text())
 for k, v in view.items():
     globals()[k]= v
 
 memory = ChineseMemory()
+
 
 class DialogueUI(QMainWindow, Ui_MainWindow):
     """UI for Dialogue
@@ -31,7 +36,7 @@ class DialogueUI(QMainWindow, Ui_MainWindow):
     def more_setup(self):
         qss = pathlib.Path('style.qss')
         if not qss.exists():
-            qss = pathlib.Path(__file__).parent / qss
+            qss = GPATH / qss
         self.setStyleSheet(qss.read_text())
         self.button_save.pressed.connect(self.save)
         self.button_quit.pressed.connect(self.quit)
@@ -49,11 +54,11 @@ class DialogueUI(QMainWindow, Ui_MainWindow):
 
         logo = pathlib.Path('images/logo.png')
         if not logo.exists():
-            logo = pathlib.Path(__file__).parent / logo
+            logo = GPATH / logo
         self.label_logo.setPixmap(QPixmap(str(logo)))
 
     def load(self):
-        fname, _ = QFileDialog.getOpenFileName(self, '加载知识库', str(pathlib.Path(__file__).parent / 'kb'), '*.owl')
+        fname, _ = QFileDialog.getOpenFileName(self, '加载知识库', str(GPATH / 'kb'), '*.owl')
         if fname:
             self.dialogue.base=get_ontology(fname).load()
             self.inform(f'加载知识库{fname}')
@@ -64,7 +69,7 @@ class DialogueUI(QMainWindow, Ui_MainWindow):
         self.inform('知识库存储完毕')
 
     def save_as(self):
-        fname, _ = QFileDialog.getOpenFileName(self, '保存知识库', str(pathlib.Path(__file__).parent / 'kb'), '*.owl')
+        fname, _ = QFileDialog.getOpenFileName(self, '保存知识库', str(GPATH / 'kb'), '*.owl')
         self.dialogue.base.save(fname)
         self.inform('知识库存储完毕')
 
@@ -78,7 +83,7 @@ class DialogueUI(QMainWindow, Ui_MainWindow):
         self.inform('退出对话')
 
     def open_document(self):
-        subprocess.run(['open', pathlib.Path(__file__).parent / 'helpdoc.pdf'])
+        subprocess.run(['open', GPATH / 'helpdoc.pdf'])
 
     def open_home(self):
         import webbrowser
@@ -101,12 +106,17 @@ class DialogueUI(QMainWindow, Ui_MainWindow):
         #     self.text_dialogue.append(f'{p}: ')
         #     for i in t:
         #         self.text_dialogue.insertPlainText(i)
-        # self.display = types.MethodType(typing, self)
-        from .qadict import testy
-        self.test = iter(testy)
-        self.q = self.r = None
-        self.text_information.setPlainText(f'3秒钟后开始演示')
-        time.sleep(3)
+        # self.display = types.MethodType(typing, self)  
+        self.button_demo.setText("中止")
+        self.button_demo.pressed.connect(self.demo_pause)
+        self.pause = self.flag = False
+        if self.flag is False:
+            from .qadict import testy
+            self.test = iter(testy)
+            self.q = self.r = None
+            self.text_information.setPlainText(f'3秒钟后开始演示')
+            time.sleep(3)
+            self.flag = True
 
         self.timer = QBasicTimer()
         if self.timer.isActive():
@@ -115,14 +125,21 @@ class DialogueUI(QMainWindow, Ui_MainWindow):
             self.timer.start(180, self)
             self.inform(f'演示开始于{QDateTime.currentDateTime().toString("yyyy-MM-dd hh:mm:ss")}')
 
+    def demo_pause(self):
+        self.button_demo.pressed.connect(self.demo)
+        self.button_demo.setText("演示")
+        self.pause = True
+
     def display(self, t, p=None):
         if p is None:
             self.text_dialogue.append(f'<div><em>{t}</em></div>')
         else:
-            self.text_dialogue.append(f'''<div><img src="{p['path']}" height=18 width=18 alt="{p['emoji']}"/>: 
+            self.text_dialogue.append(f'''<div><img src="{str(GPATH / p['path'])}" height=18 width=18 alt="{p['emoji']}"/>: 
                 <span class="{p['class']}">{t}</span></div>''')
 
     def timerEvent(self, e):
+        if self.pause:
+            return
         def _submit():
             self._q = self.edit_input.text()
             self.edit_input.clear()
@@ -158,14 +175,3 @@ class DialogueUI(QMainWindow, Ui_MainWindow):
     def inform(self, s):
         self.text_information.setPlainText(s)
 
-
-# if __name__ == '__main__':
-#     import sys
-#     memory = ChineseMemory()
-#     d = Dialogue()
-#     with d.base:
-#         app = QApplication(sys.argv)
-#         dui=DialogueUI(d)
-#         dui.show()
-#         os.system("pause")
-#         sys.exit(app.exec_())
